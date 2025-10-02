@@ -33,6 +33,7 @@ h1 { margin-top:0; text-align:center; }
   padding:10px 20px; 
   border-radius:8px; 
   background:#4dabf7; 
+  background:#f74d4d; 
   color:#fff; 
   border:none; 
   cursor:pointer; 
@@ -63,14 +64,14 @@ h1 { margin-top:0; text-align:center; }
 .wrong { background:#ff6b6b !important; color:#fff; }
 /* タイマーを中央に配置するための親要素 */
 #quizArea {
-  text-align: center;  /* ← 子要素（.timer）が中央に */
+  text-align: center;
 }
 /* タイマースタイル */
 .timer { 
   font-size:1rem;
   font-weight:bold; 
-  margin: 0px auto;      /* ← 上下は10px, 左右は自動で中央寄せ */
-  display:inline-block;   /* ← 横幅に合わせて中央寄せ可能 */
+  margin: 0px auto;
+  display:inline-block;
   background:#272727; 
   color:#fff; 
   padding:6px 12px;
@@ -2356,10 +2357,13 @@ function selectChoice(btn, selected, correct){
       currentIndex++; 
       showQuestion(); 
     }, 500);
-
   } else {
     buttons.forEach(b => { 
-      if(b.textContent === correct) b.classList.add("wrong"); 
+      if(b.textContent === correct) {
+        b.classList.add("correct");  // ← 本来は正解なので correct に
+      } else if(b === btn) {
+        b.classList.add("wrong");    // ← 選んだボタンは wrong
+      }
     });
     quizList.push(quizList[currentIndex]);
     incorrectCount++;
