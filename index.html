@@ -2360,7 +2360,7 @@ function selectChoice(btn, selected, correct){
   } else {
     buttons.forEach(b => { 
       if(b.textContent === correct) {
-        b.classList.add("wrong");   // ← 正しい答えを赤くする
+        b.classList.add("wrong");   // ← 正しい答えだけ赤
       }
     });
     quizList.push(quizList[currentIndex]);
@@ -2368,6 +2368,8 @@ function selectChoice(btn, selected, correct){
     playSound(wrongSound);
 
     setTimeout(() => { 
+      wrongSound.pause();
+      wrongSound.currentTime = 0;
       currentIndex++; 
       showQuestion(); 
     }, 800);
