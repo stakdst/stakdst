@@ -2358,19 +2358,20 @@ function selectChoice(btn, selected, correct){
     }, 500);
 
   } else {
-  buttons.forEach(b => { 
-    if(b.textContent === correct) {
-      b.classList.add("wrong");   // ← 正しい答えを赤くする
-    }
-  });
-  quizList.push(quizList[currentIndex]);
-  incorrectCount++;
-  playSound(wrongSound);
+    buttons.forEach(b => { 
+      if(b.textContent === correct) {
+        b.classList.add("wrong");   // ← 正しい答えを赤くする
+      }
+    });
+    quizList.push(quizList[currentIndex]);
+    incorrectCount++;
+    playSound(wrongSound);
 
-  setTimeout(() => { 
-    currentIndex++; 
-    showQuestion(); 
-  }, 800);
+    setTimeout(() => { 
+      currentIndex++; 
+      showQuestion(); 
+    }, 800);
+  }
 }
 
 function showSummary(cleared=false,timeOut=false){
