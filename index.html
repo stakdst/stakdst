@@ -125,6 +125,9 @@ function showQuestion(){
   const item = quizList[currentIndex];
   englishWordDiv.textContent = item.english;
 
+  // 残り問題数の更新をここで実施（正解確認後の更新）
+  globalTimerDiv.textContent = `あと${quizList.length - currentIndex}問       時間: ${getRemainingTime().toFixed(2)}`;
+
   // 選択肢作成
   let choices = [item.japanese];
   let dummies = [...item.dummy];
@@ -148,6 +151,10 @@ function showQuestion(){
   });
 }
 
+function getRemainingTime(){
+  return Math.max(globalTime - (performance.now() - startTime)/1000,0);
+}
+
 // 選択
 function selectChoice(btn, selected, correct){
   if(!canSelect) return;
@@ -165,6 +172,8 @@ function selectChoice(btn, selected, correct){
     });
     quizList.push(quizList[currentIndex]); // 後ろに回す
   }
+
+  // 0.5秒後に次の問題表示
   setTimeout(()=>{
     currentIndex++;
     showQuestion();
