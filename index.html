@@ -2278,18 +2278,6 @@ startBtn.addEventListener('click',()=>{
   
   const correctSound = document.getElementById("correctSound");
   const wrongSound = document.getElementById("wrongSound");
-
-  correctSound.playbackRate = 1.5;
-  wrongSound.playbackRate = 1.5;
-
-  [correctSound, wrongSound].forEach(snd=>{
-    snd.volume = 0;
-    snd.play().then(()=>{
-      snd.pause();
-      snd.currentTime = 0;
-      snd.volume = 1;
-    }).catch(e=>console.log("unlock error:", e));
-  });
 });
 
 function updateTimer(timestamp){
