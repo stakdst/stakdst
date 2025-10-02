@@ -78,6 +78,19 @@ for (let t=50; t<=2100; t+=50){
 }
 timeSelect.value=200; // 初期値
 
+// ===== 編集距離関数 (文字列類似回避用) =====
+function editDistance(a,b){
+  const dp = Array(a.length+1).fill(null).map(()=>Array(b.length+1).fill(0));
+  for(let i=0;i<=a.length;i++) dp[i][0]=i;
+  for(let j=0;j<=b.length;j++) dp[0][j]=j;
+  for(let i=1;i<=a.length;i++){
+    for(let j=1;j<=b.length;j++){
+      dp[i][j]=a[i-1]===b[j-1]?dp[i-1][j-1]:Math.min(dp[i-1][j-1],dp[i-1][j],dp[i][j-1])+1;
+    }
+  }
+  return dp[a.length][b.length];
+}
+
 startBtn.addEventListener('click', () => {
   const start = parseInt(rangeStart.value)||1;
   const end = parseInt(rangeEnd.value)||wordPairs.length;
@@ -105,19 +118,24 @@ startBtn.addEventListener('click', () => {
 
 function startGlobalTimer(){
   clearInterval(globalTimerInterval);
-  updateGlobalTimer();
+  const start = Date.now();
+  const total = globalTime;
+
   globalTimerInterval = setInterval(()=>{
-    globalTime--;
+    const elapsed = (Date.now()-start)/1000;
+    const remain = Math.max(total - elapsed, 0);
+    globalTime = remain;
     updateGlobalTimer();
-    if (globalTime<=0){
+    if (remain<=0){
       clearInterval(globalTimerInterval);
       showSummary(true);
     }
-  },1000);
+  },100); // 0.1秒ごとに更新
 }
 
 function updateGlobalTimer(){
-  globalTimerDiv.textContent = `残り時間: ${globalTime}秒`;
+  const remainQuestions = quizList.length - currentIndex;
+  globalTimerDiv.textContent = `あと${remainQuestions}問       時間: ${globalTime.toFixed(2)}`;
 }
 
 function showQuestion(){
@@ -130,10 +148,15 @@ function showQuestion(){
 
   const correct = item.japanese;
   const pool = [...wordPairs.map(w=>w.japanese)];
+
+  // ===== 類似度が高すぎる選択肢を除外 =====
   const wrongs = [];
   while (wrongs.length<3){
-    const c = pool[Math.floor(Math.random()*pool.length)];
-    if (c!==correct && !wrongs.includes(c)) wrongs.push(c);
+    const candidate = pool[Math.floor(Math.random()*pool.length)];
+    if (candidate!==correct && !wrongs.includes(candidate)){
+      const dist = editDistance(candidate, correct);
+      if(dist>=2) wrongs.push(candidate); // 2文字以上違うもののみ
+    }
   }
   const choices = [correct,...wrongs].sort(()=>Math.random()-0.5);
 
@@ -146,7 +169,7 @@ function showQuestion(){
     // ★ 押した瞬間に判定
     btn.addEventListener("mousedown", ()=>selectChoice(btn,ch,correct));
     btn.addEventListener("touchstart", (e)=>{
-      e.preventDefault(); // touchend の二重発火防止
+      e.preventDefault();
       selectChoice(btn,ch,correct);
     }, {passive:false});
 
@@ -159,15 +182,12 @@ function selectChoice(btn,selected,correct){
   buttons.forEach(b=>b.disabled=true);
 
   if (selected===correct){
-    btn.classList.add("correct");
+    btn.classList.add("correct"); // 正解ボタンのみ赤
     score++;
   }else{
     buttons.forEach(b=>{
-      if (b.textContent===correct){
-        b.classList.add("correct");
-      }else{
-        b.classList.add("wrong");
-      }
+      if(b.textContent===correct) b.classList.add("correct");
+      else b.classList.add("wrong");
     });
     quizList.push(quizList[currentIndex]); // 後ろに回す
   }
