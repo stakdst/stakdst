@@ -13,8 +13,8 @@ h1 { margin-top:0; }
 .choices { display:flex; flex-direction:column; gap:8px; margin-bottom:12px; }
 .choiceBtn { padding:10px; font-size:1rem; cursor:pointer; border:1px solid #ddd; background:#fff; border-radius:6px; text-align:left; transition:background 0.3s; }
 .choiceBtn:hover { box-shadow:0 1px 4px rgba(0,0,0,0.06); }
-.correct { background:#ff9999 !important; } /* 赤 */
-.wrong { background:#99ccff !important; }  /* 青 */
+.correct { background:#ff9999 !important; } 
+.wrong { background:#99ccff !important; }  
 .timer { font-size:1.2rem; font-weight:bold; margin:10px 0; }
 select, input, button { font-size:1rem; padding:4px; }
 .hidden { display:none; }
@@ -25,8 +25,9 @@ select, input, button { font-size:1rem; padding:4px; }
   <h1>英単語4択クイズ</h1>
 
   <div class="controls" id="controls">
+    <label>CSVファイル: <input type="file" id="csvFile"></label>
     <label>範囲: <input id="rangeStart" type="number" min="1" value="1" style="width:70px"> 〜 
-      <input id="rangeEnd" type="number" min="1" value="1700" style="width:70px"></label>
+      <input id="rangeEnd" type="number" min="1" value="10" style="width:70px"></label>
     <label>制限時間:
       <select id="timeSelect"></select> 秒
     </label>
@@ -43,21 +44,16 @@ select, input, button { font-size:1rem; padding:4px; }
 </div>
 
 <script>
-// ===== サンプル1700語 =====
-const sampleWords = [];
-for (let i=1;i<=1700;i++){
-  sampleWords.push({english:`word${i}`, japanese:`単語${i}`});
-}
-
-let wordPairs = sampleWords;
+let wordPairs = [];
 let quizList = [];
 let currentIndex = 0;
 let score = 0;
 let globalTime = 0;
-let globalTimerInterval = null;
-let canSelect = true; // 選択可能フラグ
+let startTime = 0;
+let animationFrameId = null;
+let canSelect = true;
 
-// DOM
+const csvFile = document.getElementById('csvFile');
 const startBtn = document.getElementById('startBtn');
 const rangeStart = document.getElementById('rangeStart');
 const rangeEnd = document.getElementById('rangeEnd');
@@ -69,122 +65,106 @@ const globalTimerDiv = document.getElementById('globalTimer');
 const timeSelect = document.getElementById('timeSelect');
 const controls = document.getElementById('controls');
 
-// ===== 制限時間セレクトを作成 (50〜2100秒, 50刻み) =====
-for (let t=50; t<=2100; t+=50){
-  let opt=document.createElement("option");
-  opt.value=t; opt.textContent=t;
+// 制限時間セレクト
+for(let t=50;t<=2100;t+=50){
+  const opt = document.createElement('option');
+  opt.value = t; opt.textContent = t;
   timeSelect.appendChild(opt);
 }
-timeSelect.value=200; // 初期値
+timeSelect.value = 200;
 
-// ===== 編集距離関数 (文字列類似回避用) =====
-function editDistance(a,b){
-  const dp = Array(a.length+1).fill(null).map(()=>Array(b.length+1).fill(0));
-  for(let i=0;i<=a.length;i++) dp[i][0]=i;
-  for(let j=0;j<=b.length;j++) dp[0][j]=j;
-  for(let i=1;i<=a.length;i++){
-    for(let j=1;j<=b.length;j++){
-      dp[i][j]=a[i-1]===b[j-1]?dp[i-1][j-1]:Math.min(dp[i-1][j-1],dp[i-1][j],dp[i][j-1])+1;
+// CSV読み込み
+csvFile.addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt){
+    const lines = evt.target.result.split(/\r?\n/);
+    wordPairs = [];
+    for(const line of lines){
+      if(!line.trim()) continue;
+      const [eng, ja, dummyStr] = line.split(',');
+      const dummy = dummyStr ? dummyStr.replace(/^"|"$/g,'').split(',') : [];
+      wordPairs.push({english:eng.trim(), japanese:ja.trim(), dummy});
     }
-  }
-  return dp[a.length][b.length];
-}
+    rangeEnd.value = wordPairs.length;
+  };
+  reader.readAsText(file,'UTF-8');
+});
 
-startBtn.addEventListener('click', () => {
+// スタート
+startBtn.addEventListener('click', ()=>{
   const start = parseInt(rangeStart.value)||1;
   const end = parseInt(rangeEnd.value)||wordPairs.length;
-
-  if (start<1 || end>wordPairs.length || start> end){
-    alert("範囲指定が不正です");
-    return;
+  if(start<1||end>wordPairs.length||start> end){
+    alert("範囲指定が不正です"); return;
   }
-
-  const selected = wordPairs.slice(start-1,end);
-  quizList = [...selected];
+  quizList = wordPairs.slice(start-1,end);
   quizList.sort(()=>Math.random()-0.5);
 
   globalTime = parseInt(timeSelect.value);
+  score = 0; currentIndex = 0;
+  canSelect = true;
 
-  score=0; currentIndex=0;
   quizArea.classList.remove('hidden');
   summaryDiv.classList.add('hidden');
 
-  // コントロールを無効化
   Array.from(controls.querySelectorAll("input,select,button")).forEach(el=>el.disabled=true);
 
-  startGlobalTimer();
+  startTime = performance.now();
+  requestAnimationFrame(updateTimer);
   showQuestion();
 });
 
-function startGlobalTimer(){
-  clearInterval(globalTimerInterval);
-  const start = Date.now();
-  const total = globalTime;
-
-  globalTimerInterval = setInterval(()=>{
-    const elapsed = (Date.now()-start)/1000;
-    const remain = Math.max(total - elapsed, 0);
-    globalTime = remain;
-    updateGlobalTimer();
-    if (remain<=0){
-      clearInterval(globalTimerInterval);
-      showSummary(true);
-    }
-  },100); // 0.1秒ごとに更新
-}
-
-function updateGlobalTimer(){
-  const remainQuestions = quizList.length - currentIndex;
-  globalTimerDiv.textContent = `あと${remainQuestions}問       時間: ${globalTime.toFixed(2)}`;
+// タイマー更新（滑らか）
+function updateTimer(timestamp){
+  const elapsed = (timestamp - startTime)/1000;
+  const remain = Math.max(globalTime - elapsed,0);
+  globalTimerDiv.textContent = `あと${quizList.length - currentIndex}問       時間: ${remain.toFixed(2)}`;
+  if(remain<=0){
+    showSummary(true);
+  }else{
+    animationFrameId = requestAnimationFrame(updateTimer);
+  }
 }
 
 function showQuestion(){
-  if (currentIndex >= quizList.length){
-    return showSummary();
-  }
-  canSelect = true; // 次の問題で押せるように
+  if(currentIndex>=quizList.length){ return showSummary(); }
+  canSelect = true;
   const item = quizList[currentIndex];
   englishWordDiv.textContent = item.english;
 
-  const correct = item.japanese;
-  const pool = [...wordPairs.map(w=>w.japanese)];
-
-  // 類似度が高すぎる選択肢を除外
-  const wrongs = [];
-  while (wrongs.length<3){
-    const candidate = pool[Math.floor(Math.random()*pool.length)];
-    if(candidate!==correct && !wrongs.includes(candidate)){
-      const dist = editDistance(candidate, correct);
-      if(dist>=2) wrongs.push(candidate);
-    }
+  // 選択肢作成
+  let choices = [item.japanese];
+  let dummies = [...item.dummy];
+  while(choices.length<4 && dummies.length>0){
+    const idx = Math.floor(Math.random()*dummies.length);
+    choices.push(dummies.splice(idx,1)[0]);
   }
-  const choices = [correct,...wrongs].sort(()=>Math.random()-0.5);
+  choices.sort(()=>Math.random()-0.5);
 
   choicesDiv.innerHTML = "";
   choices.forEach(ch=>{
-    const btn=document.createElement("button");
-    btn.className="choiceBtn";
-    btn.textContent=ch;
-
-    btn.addEventListener("mousedown", ()=>selectChoice(btn,ch,correct));
-    btn.addEventListener("touchstart", (e)=>{
+    const btn = document.createElement('button');
+    btn.className = "choiceBtn";
+    btn.textContent = ch;
+    btn.addEventListener('mousedown', ()=>selectChoice(btn,ch,item.japanese));
+    btn.addEventListener('touchstart', (e)=>{
       e.preventDefault();
-      selectChoice(btn,ch,correct);
+      selectChoice(btn,ch,item.japanese);
     }, {passive:false});
-
     choicesDiv.appendChild(btn);
   });
 }
 
-function selectChoice(btn,selected,correct){
-  if(!canSelect) return; // 判定中は無視
-  canSelect = false;        // 判定中は押せない
-
-  const buttons=document.querySelectorAll(".choiceBtn");
+function selectChoice(btn, selected, correct){
+  if(!canSelect) return;
+  canSelect = false;
+  const buttons = document.querySelectorAll(".choiceBtn");
   buttons.forEach(b=>b.disabled=true);
 
   if(selected===correct){
-    btn.classList.add("correct"); // 正解だけ赤
+    btn.classList.add("correct");
     score++;
   }else{
     buttons.forEach(b=>{
@@ -193,14 +173,17 @@ function selectChoice(btn,selected,correct){
     });
     quizList.push(quizList[currentIndex]); // 後ろに回す
   }
-  setTimeout(()=>{ currentIndex++; showQuestion(); },500);
+  setTimeout(()=>{
+    currentIndex++;
+    showQuestion();
+  },500);
 }
 
 function showSummary(timeout=false){
-  clearInterval(globalTimerInterval);
+  if(animationFrameId) cancelAnimationFrame(animationFrameId);
   quizArea.classList.add('hidden');
   summaryDiv.classList.remove('hidden');
-  summaryDiv.innerHTML=`<h2>結果</h2>
+  summaryDiv.innerHTML = `<h2>結果</h2>
   <p>${timeout?"時間切れ！ ":""}正答数: ${score} / ${quizList.length}</p>`;
 }
 </script>
