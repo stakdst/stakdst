@@ -2249,6 +2249,11 @@ const summaryDiv=document.getElementById('summary');
 const globalTimerDiv=document.getElementById('globalTimer');
 const controls=document.getElementById('controls');
 
+function playSound(audioElem) {
+  const s = audioElem.cloneNode(); // 新しいコピーを作る
+  s.play().catch(e => console.log("play error:", e));
+}
+
 rangeStart.addEventListener('input',updateTimeByRange);
 rangeEnd.addEventListener('input',updateTimeByRange);
 function updateTimeByRange(){
@@ -2330,8 +2335,7 @@ function selectChoice(btn, selected, correct){
   if(selected === correct){
     btn.classList.add("correct");
     correctCount++;
-    correctSound.currentTime = 0;
-    correctSound.play();
+    playSound(correctSound);
 
     // 0.5秒で次へ
     setTimeout(() => { 
@@ -2345,8 +2349,7 @@ function selectChoice(btn, selected, correct){
     });
     quizList.push(quizList[currentIndex]);
     incorrectCount++;
-    wrongSound.currentTime = 0;
-    wrongSound.play();
+    playSound(wrongSound);
 
     setTimeout(() => { 
       currentIndex++; 
