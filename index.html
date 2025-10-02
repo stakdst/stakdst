@@ -112,7 +112,7 @@ function updateTimer(timestamp){
   const remain = Math.max(globalTime - elapsed,0);
   globalTimerDiv.textContent = `あと${quizList.length - currentIndex}問       時間: ${remain.toFixed(2)}`;
   if(remain<=0){
-    showSummary(true);
+    showSummary(false,true); // Game Over
   }else{
     animationFrameId = requestAnimationFrame(updateTimer);
   }
@@ -120,7 +120,7 @@ function updateTimer(timestamp){
 
 // 問題表示
 function showQuestion(){
-  if(currentIndex>=quizList.length){ return showSummary(); }
+  if(currentIndex>=quizList.length){ return showSummary(true,false); } // CLEAR
   canSelect = true;
   const item = quizList[currentIndex];
   englishWordDiv.textContent = item.english;
@@ -180,14 +180,21 @@ function selectChoice(btn, selected, correct){
 }
 
 // 結果表示
-function showSummary(timeout=false){
+function showSummary(cleared=false,timeOut=false){
   if(animationFrameId) cancelAnimationFrame(animationFrameId);
   quizArea.classList.add('hidden');
   summaryDiv.classList.remove('hidden');
-  const elapsedTime = ((performance.now() - startTime)/1000).toFixed(2);
-  summaryDiv.innerHTML = `<h2>CLEAR!</h2>
-  <p>不正解回数: ${incorrectCount}</p>
-  <p>経過時間: ${elapsedTime}秒</p>`;
+
+  if(timeOut){
+    summaryDiv.innerHTML = `<h2>Game Over......</h2>
+    <p>あと${quizList.length - currentIndex}問！</p>
+    <p>miss: ${incorrectCount}問</p>`;
+  }else{
+    const elapsedTime = ((performance.now() - startTime)/1000).toFixed(2);
+    summaryDiv.innerHTML = `<h2>CLEAR!</h2>
+    <p>miss: ${incorrectCount}問</p>
+    <p>time: ${elapsedTime}秒</p>`;
+  }
 }
 </script>
 </body>
