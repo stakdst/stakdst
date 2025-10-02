@@ -197,6 +197,14 @@ function updateTimer(timestamp){
 function showQuestion(){
   if(currentIndex>=quizList.length){ return showSummary(true,false); }
   canSelect=true;
+
+  // 前の問題の選択状態をリセット
+  const prevButtons = document.querySelectorAll(".choiceBtn");
+  prevButtons.forEach(b => {
+    b.classList.remove("correct", "wrong");
+    b.disabled = false;
+  });
+
   const item=quizList[currentIndex];
   englishWordDiv.textContent=item.english;
   globalTimerDiv.textContent=`正解数: ${correctCount}/${totalQuestions}問       時間: ${getRemainingTime().toFixed(2)}`;
