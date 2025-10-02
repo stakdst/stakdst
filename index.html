@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>英単語テスト</title>
+<style>
+body { 
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif; 
+  padding: 20px; 
+  background: #f5f5f5; 
+  color:#111; 
+}
+.container { 
+  max-width: 900px; 
+  margin: 0 auto; 
+  background: rgba(255,255,255,0.95); 
+  padding:20px; 
+  box-shadow:0 8px 24px rgba(0,0,0,0.15); 
+  border-radius:12px; 
+}
+h1 { margin-top:0; text-align:center; }
+.controls { 
+  margin-bottom: 18px; 
+  display:flex; 
+  gap:10px; 
+  flex-wrap:wrap; 
+  align-items:center; 
+  justify-content:center;
+}
+#startBtn { 
+  font-size:1.2rem; 
+  padding:10px 20px; 
+  border-radius:8px; 
+  background:#4dabf7; 
+  color:#fff; 
+  border:none; 
+  cursor:pointer; 
+  transition: transform 0.1s, background 0.3s;
+}
+/* #startBtn:hover { background:#339af0; transform: translateY(-2px); } */
+#startBtn:active { transform: translateY(1px); }
+.word {
+  font-size: 2.2rem; 
+  margin: 20px 0; 
+  padding: 20px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  text-align: center;
+}
+.choices { display:flex; flex-direction:column; gap:12px; margin-bottom:12px; }
+.choiceBtn { 
+  padding:14px; font-size:1.1rem; cursor:pointer; border:none; 
+  background:#f0f0f0; border-radius:10px; 
+  transition: transform 0.1s, background 0.3s, box-shadow 0.3s; 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08); text-align:left;
+}
+/* .choiceBtn:hover { background:#e0e0ff; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.12); } */
+.choiceBtn:active { transform: translateY(1px); box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+/* 選択後の濃い色 */
+.correct { background:#4dabf7 !important; color:#fff; }
+.wrong { background:#ff6b6b !important; color:#fff; }
+/* タイマー */
+.timer { 
+  font-size:1.2rem; font-weight:bold; margin: 10px 0; display:inline-block; 
+  background:#272727; color:#fff; padding:8px 16px; border-radius:20px; 
+  box-shadow:0 4px 10px rgba(0,0,0,0.2); text-align:center; 
+  font-family: 'Roboto Mono', 'Noto Mono', monospace;
+  white-space: nowrap; min-width: 300px;
+}
+.hidden { display:none; }
+/* 結果画面 */
+#summary { text-align:center; font-family:sans-serif; }
+#summary h2 { font-size:2rem; margin-bottom:15px; }
+.summary-card {
+  display:inline-block;
+  padding:20px 30px;
+  background:#fff;
+  border-radius:12px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.15);
+  min-width:300px;
+}
+.result-row { 
+  display:flex; justify-content:center; margin:5px 0; font-size:1.2rem; 
+}
+.result-label { width:40%; text-align:right; padding-right:5px; }
+.result-value { width:35%; text-align:right; margin-right:25%; }
+
+/* モバイル対応 */
+@media (max-width: 600px) {
+  .choiceBtn { font-size: 1.3rem; padding:16px; }
+  .word { font-size: 2.5rem; padding:24px; }
+  .controls { flex-direction:column; align-items:center; }
+  #startBtn { width:100%; text-align:center; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>英単語テスト</h1>
+  <div class="controls" id="controls">
+    <label>範囲: <input id="rangeStart" type="number" min="1" value="1" style="width:70px"> 〜 
+      <input id="rangeEnd" type="number" min="1" value="100" style="width:70px"></label>
+    <label>制限時間(秒):
+      <input id="timeInput" type="number" min="1" value="200" style="width:70px">
+    </label>
+    <label>選択肢:
+      <select id="choiceCountSelect">
+        <option value="2">2 個</option>
+        <option value="3">3 個</option>
+        <option value="4" selected>4 個</option>
+        <option value="5">5 個</option>
+        <option value="6">6 個</option>
+        <option value="7">7 個</option>
+        <option value="8">8 個</option>
+      </select>
+    </label>
+    <button id="startBtn">スタート</button>
+  </div>
+
+  <div id="quizArea" class="hidden">
+    <div id="globalTimer" class="timer"></div>
+    <div id="englishWord" class="word"></div>
+    <div id="choices" class="choices"></div>
+  </div>
+  <div id="summary" class="hidden"></div>
+
+  <audio id="correctSound" src="correct.mp3" preload="auto"></audio>
+  <audio id="wrongSound" src="wrong.mp3" preload="auto"></audio>
+</div>
+
+<script>
+const wordPairs = [
+  {english:"consider", japanese:"を考慮する", dummy:['ボーッと光る', 'を認める', '損失', '誓う', '操作する', '結果', 'しないように', '移民', '終点', 'を保護する', '避難する', 'およそ', 'かく', 'を夢中にさせる', '義務,関税', '災害', 'それゆえに', '引き締まった,きつい', '道,方法,点', '関係なく', '続く', '包括的な', '契約', 'はね返る', 'その上', 'のどが渇く', '検索する', '広大な', '医学の', '改正,修正', '関係がある', '距離', 'を可能にする', '積み重ね', '施行する', '落とす', 'と主張する', 'を除いて', '導く,繋がる', '検定', '利用する,開発する', '以内で', 'そらす', 'を予言する', '精神', '精力的な', '語法', '車輪', '暴露する', '蓄積する', '広まっている', '棒,極', '収穫', '比較的', '暗唱する', '明らかにする', '職業,占領', '休止', '感謝している', 'ままでいる', '貴族階級', '一致する', '強烈な', '受け入れる,含む', 'を救助する', 'を決意する', '大陸', '商業', '差し込む', 'を転換する', 'を禁じる', 'いかさまをする', 'を促す', 'を許可する', '咲く', 'を表す', 'を脅迫する', '与える', '市長', '下水', '残念な', '産出する,屈する', '(手)をたたく', 'に貢献する', '精神の', '永久', 'を制限する', '浅い', '神話', '安心させる', 'を縫う', '量', '規律,分野', '具現する', 'いたずらな', '止める', 'に反対する', 'を後悔する', '失礼な', '飼いならす']},
+  {english:"increase", japanese:"を増やす", dummy:['動揺している', '集中する', '縮む,減る', '名誉', '潜在的な', '痛む', '紫外', '女性の', '評価する,感謝する', '誓う', 'を逮捕する', '識別する', 'をまねる', '小説', '最も重要な', '肩をすくめる', 'を投資する', 'の準備をする', '逆に', 'ボーッと光る', 'ほとんど', 'を罰する', '航海', '約束,予約', 'AをBだと思う', '異なる', '日課の仕事', '泥棒', '柔軟な', '世代', 'をする余裕がある', '有能な', '依頼人', '急激な', 'を計算する', 'を楽しませる', 'する傾向がある', '大騒ぎ', '恵み', '隠す', '話', '激しい', '関連のある', 'に強いる', '微生物', '泣く', 'ささいな', '前の', 'まとめる', '急速な', '最近の', '特徴', '代表して', '学部,能力', '金額,合計,要約', '都合がいい', '領域', '通路', '印', '直接,指し示す', '倫理(学)', 'おぼれ死ぬ', '慣れる', '元気,罰金,細かい', '観光', 'を超える', '神経細胞', '鮮やかな', '取ってくる', '差し込む', '理想的な', 'に似ている', '子供', '委員会', '必ずしも', '領土,なわ張り', 'を保証する', '多彩', '記述', '高価な', 'めまい', '名声', '険しい', 'を向上させる', 'わかりやすい', 'を投げる', '選択の自由', 'を励ます', '吸う', '請求書,紙幣,法案', '薄れる', '貪欲な', 'を経験する', '機能', '逃げる', '手続き', '駆りたてる', 'をうらやむ', '会議', '耳が不自由な']},
+  {english:"expect", japanese:"を予期する", dummy:['長所', '霊長類', 'そらす', '火山', 'を困惑させる', '変動範囲,領域', '急上昇する', '時々', '責任', 'を伝える', '永久', 'を追求する', '土壌', '国', '逆説', '移住する', '細長い一片', 'ばかげた', '陪審員', 'を刺激する', 'の跡をたどる', '野生生物', 'を妨げる', '単調な', '小道,足跡', '拍手する', '思い込む,引き受ける', '軍隊', '話', '宝石', '毒', '外見,様子,出現', '富', '命令,秩序,順番', 'そよ風', '控える', '陽気な', 'を犠牲にする', '投票', '一晩', '流動的な', '4分の1', 'を推定する', '精神科医', 'の準備をする', 'に合う', '借金', '再開する', '憎しみ', '悲劇', '領域', '悲鳴をあげる', 'きっかけになる', 'の上に', 'に感染する', 'を計算する', '革新', '量', '強める', 'ちゃんとした', '辞める', '妥当な,正当な', '生態', 'を禁止する', '栄養', '規範', '首都,資本', '美辞麗句', 'を受け継ぐ', '疲れ切る', '女性の', 'なだめる', 'を見落とす', 'を理解する', '抑制する', '化学的な', '強烈な', '異なる', '高価な', '逆に', '証言する', 'を見分ける', '出来事', '本物の', '先行する', '疲労', '倫理(学)', '用心', '源', 'に抵抗する', 'を断る', '不快な', '自然に起こる', '情熱', '姿勢', '暴動', '惑星', '種,分類する', '乗組員たち', 'を解釈する']},
+// ADD WORDS
+];
+
+let quizList=[], currentIndex=0, correctCount=0, incorrectCount=0, globalTime=0, startTime=0, animationFrameId=null, canSelect=true, totalQuestions=0;
+
+const startBtn=document.getElementById('startBtn');
+const rangeStart=document.getElementById('rangeStart');
+const rangeEnd=document.getElementById('rangeEnd');
+const timeInput=document.getElementById('timeInput');
+const choiceCountSelect=document.getElementById('choiceCountSelect');
+const quizArea=document.getElementById('quizArea');
+const englishWordDiv=document.getElementById('englishWord');
+const choicesDiv=document.getElementById('choices');
+const summaryDiv=document.getElementById('summary');
+const globalTimerDiv=document.getElementById('globalTimer');
+const controls=document.getElementById('controls');
+
+rangeStart.addEventListener('input',updateTimeByRange);
+rangeEnd.addEventListener('input',updateTimeByRange);
+function updateTimeByRange(){
+  const start=parseInt(rangeStart.value)||1;
+  const end=parseInt(rangeEnd.value)||wordPairs.length;
+  if(start<1||end<start) return;
+  const count=end-start+1;
+  timeInput.value=Math.ceil(count*2);
+}
+
+startBtn.addEventListener('click',()=>{
+  const start=parseInt(rangeStart.value)||1;
+  const end=parseInt(rangeEnd.value)||wordPairs.length;
+  if(start<1||end>wordPairs.length||start>end){ alert("範囲指定が不正です"); return; }
+  quizList=wordPairs.slice(start-1,end);
+  quizList.sort(()=>Math.random()-0.5);
+  totalQuestions=quizList.length;
+  correctCount=0; incorrectCount=0; currentIndex=0; canSelect=true;
+
+  quizArea.classList.remove('hidden'); summaryDiv.classList.add('hidden');
+  Array.from(controls.querySelectorAll("input,select,button")).forEach(el=>el.disabled=true);
+
+  globalTime=parseFloat(timeInput.value);
+  startTime=performance.now();
+  requestAnimationFrame(updateTimer);
+  showQuestion();
+  
+  const correctSound = document.getElementById("correctSound");
+  const wrongSound = document.getElementById("wrongSound");
+
+  correctSound.playbackRate = 1.5;
+  wrongSound.playbackRate = 1.5;
+
+  [correctSound, wrongSound].forEach(snd=>{
+    snd.volume = 0;
+    snd.play().then(()=>{
+      snd.pause();
+      snd.currentTime = 0;
+      snd.volume = 1;
+    }).catch(e=>console.log("unlock error:", e));
+  });
+});
+
+function updateTimer(timestamp){
+  const elapsed=(timestamp-startTime)/1000;
+  const remain=Math.max(globalTime-elapsed,0);
+  globalTimerDiv.textContent=`正解数: ${correctCount}/${totalQuestions}問       時間: ${remain.toFixed(2)}`;
+  if(remain<=0){ showSummary(false,true); }
+  else{ animationFrameId=requestAnimationFrame(updateTimer); }
+}
+
+function showQuestion(){
+  if(currentIndex>=quizList.length){ return showSummary(true,false); }
+  canSelect=true;
+  const item=quizList[currentIndex];
+  englishWordDiv.textContent=item.english;
+  globalTimerDiv.textContent=`正解数: ${correctCount}/${totalQuestions}問       時間: ${getRemainingTime().toFixed(2)}`;
+
+  let choices=[item.japanese];
+  const totalChoices=parseInt(choiceCountSelect.value);
+  let dummies=[...item.dummy]; dummies.sort(()=>Math.random()-0.5);
+  while(choices.length<totalChoices && dummies.length>0){ choices.push(dummies.pop()); }
+  choices.sort(()=>Math.random()-0.5);
+
+  choicesDiv.innerHTML="";
+  choices.forEach(ch=>{
+    const btn=document.createElement('button');
+    btn.className="choiceBtn";
+    btn.textContent=ch;
+    btn.addEventListener('mousedown',()=>selectChoice(btn,ch,item.japanese));
+    btn.addEventListener('touchstart',(e)=>{e.preventDefault(); selectChoice(btn,ch,item.japanese);},{passive:false});
+    choicesDiv.appendChild(btn);
+  });
+}
+
+function getRemainingTime(){ return Math.max(globalTime-(performance.now()-startTime)/1000,0); }
+
+function selectChoice(btn, selected, correct){
+  if(!canSelect) return;
+  canSelect = false;
+
+  const buttons = document.querySelectorAll(".choiceBtn");
+  buttons.forEach(b => b.disabled = true);
+
+  const correctSound = document.getElementById("correctSound");
+  const wrongSound = document.getElementById("wrongSound");
+
+  if(selected === correct){
+    btn.classList.add("correct");
+    correctCount++;
+    correctSound.currentTime = 0;
+    correctSound.play();
+
+    // 0.5秒で次へ
+    setTimeout(() => { 
+      currentIndex++; 
+      showQuestion(); 
+    }, 500);
+
+  } else {
+    buttons.forEach(b => { 
+      if(b.textContent === correct) b.classList.add("wrong"); 
+    });
+    quizList.push(quizList[currentIndex]);
+    incorrectCount++;
+    wrongSound.currentTime = 0;
+    wrongSound.play();
+
+    setTimeout(() => { 
+      currentIndex++; 
+      showQuestion(); 
+    }, 800);
+  }
+}
+
+function showSummary(cleared=false,timeOut=false){
+  if(animationFrameId) cancelAnimationFrame(animationFrameId);
+  quizArea.classList.add('hidden'); summaryDiv.classList.remove('hidden');
+  Array.from(controls.querySelectorAll("input,select,button")).forEach(el=>el.disabled=false);
+
+  let remainingQuestions = totalQuestions - correctCount; 
+
+  let cardHTML='';
+  if(timeOut){
+    cardHTML=`<div class="summary-card">
+      <h2>GameOver !</h2>
+      <div class="result-row"><span class="result-label">正解数</span><span class="result-value">${correctCount}/${totalQuestions}問</span></div>
+      <div class="result-row"><span class="result-label">miss</span><span class="result-value">${incorrectCount}回</span></div>
+      <div class="result-row"><span class="result-label">あと</span><span class="result-value">${remainingQuestions}問</span></div>
+    </div>`;
+  }else{
+    const elapsedTime=((performance.now()-startTime)/1000).toFixed(2);
+    cardHTML=`<div class="summary-card">
+      <h2>CLEAR!</h2>
+      <div class="result-row"><span class="result-label">正解数</span><span class="result-value">${correctCount}/${totalQuestions}問</span></div>
+      <div class="result-row"><span class="result-label">miss</span><span class="result-value">${incorrectCount}回</span></div>
+      <div class="result-row"><span class="result-label">time</span><span class="result-value">${elapsedTime}秒</span></div>
+    </div>`;
+  }
+  summaryDiv.innerHTML=cardHTML;
+}
+</script>
+</body>
+</html>
