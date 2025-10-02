@@ -2276,10 +2276,20 @@ startBtn.addEventListener('click',()=>{
   requestAnimationFrame(updateTimer);
   showQuestion();
   
-  // const correctSound = document.getElementById("correctSound");
+  const correctSound = document.getElementById("correctSound");
   const wrongSound = document.getElementById("wrongSound");
-  // correctSound.playbackRate = 1.5;
+
+  correctSound.playbackRate = 1.5;
   wrongSound.playbackRate = 1.5;
+
+  [correctSound, wrongSound].forEach(snd=>{
+    snd.volume = 0;
+    snd.play().then(()=>{
+      snd.pause();
+      snd.currentTime = 0;
+      snd.volume = 1;
+    }).catch(e=>console.log("unlock error:", e));
+  });
 });
 
 function updateTimer(timestamp){
@@ -2347,11 +2357,10 @@ function selectChoice(btn, selected, correct){
     wrongSound.currentTime = 0;
     wrongSound.play();
 
-    // 1秒で次へ
     setTimeout(() => { 
       currentIndex++; 
       showQuestion(); 
-    }, 3000);
+    }, 800);
   }
 }
 
