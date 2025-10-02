@@ -25,9 +25,8 @@ select, input, button { font-size:1rem; padding:4px; }
   <h1>英単語4択クイズ</h1>
 
   <div class="controls" id="controls">
-    <label>CSVファイル: <input type="file" id="csvFile"></label>
     <label>範囲: <input id="rangeStart" type="number" min="1" value="1" style="width:70px"> 〜 
-      <input id="rangeEnd" type="number" min="1" value="10" style="width:70px"></label>
+      <input id="rangeEnd" type="number" min="1" value="8" style="width:70px"></label>
     <label>制限時間:
       <select id="timeSelect"></select> 秒
     </label>
@@ -44,7 +43,18 @@ select, input, button { font-size:1rem; padding:4px; }
 </div>
 
 <script>
-let wordPairs = [];
+// ===== CSVデータをJS内に埋め込み =====
+const wordPairs = [
+  {english:"en1", japanese:"ja1", dummy:["a","b","c","d","e"]},
+  {english:"en2", japanese:"ja2", dummy:["a","b","c","d","e"]},
+  {english:"en3", japanese:"ja3", dummy:["a","b","c","d","e"]},
+  {english:"en4", japanese:"ja4", dummy:["a","b","c","d","e"]},
+  {english:"en5", japanese:"ja5", dummy:["a","b","c","d","e"]},
+  {english:"en6", japanese:"ja6", dummy:["a","b","c","d","e"]},
+  {english:"en7", japanese:"ja7", dummy:["a","b","c","d","e"]},
+  {english:"en8", japanese:"ja8", dummy:["a","b","c","d","e"]}
+];
+
 let quizList = [];
 let currentIndex = 0;
 let score = 0;
@@ -53,7 +63,6 @@ let startTime = 0;
 let animationFrameId = null;
 let canSelect = true;
 
-const csvFile = document.getElementById('csvFile');
 const startBtn = document.getElementById('startBtn');
 const rangeStart = document.getElementById('rangeStart');
 const rangeEnd = document.getElementById('rangeEnd');
@@ -72,25 +81,6 @@ for(let t=50;t<=2100;t+=50){
   timeSelect.appendChild(opt);
 }
 timeSelect.value = 200;
-
-// CSV読み込み
-csvFile.addEventListener('change', (e)=>{
-  const file = e.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = function(evt){
-    const lines = evt.target.result.split(/\r?\n/);
-    wordPairs = [];
-    for(const line of lines){
-      if(!line.trim()) continue;
-      const [eng, ja, dummyStr] = line.split(',');
-      const dummy = dummyStr ? dummyStr.replace(/^"|"$/g,'').split(',') : [];
-      wordPairs.push({english:eng.trim(), japanese:ja.trim(), dummy});
-    }
-    rangeEnd.value = wordPairs.length;
-  };
-  reader.readAsText(file,'UTF-8');
-});
 
 // スタート
 startBtn.addEventListener('click', ()=>{
@@ -116,7 +106,7 @@ startBtn.addEventListener('click', ()=>{
   showQuestion();
 });
 
-// タイマー更新（滑らか）
+// 滑らかタイマー
 function updateTimer(timestamp){
   const elapsed = (timestamp - startTime)/1000;
   const remain = Math.max(globalTime - elapsed,0);
@@ -128,6 +118,7 @@ function updateTimer(timestamp){
   }
 }
 
+// 問題表示
 function showQuestion(){
   if(currentIndex>=quizList.length){ return showSummary(); }
   canSelect = true;
@@ -157,6 +148,7 @@ function showQuestion(){
   });
 }
 
+// 選択
 function selectChoice(btn, selected, correct){
   if(!canSelect) return;
   canSelect = false;
@@ -179,6 +171,7 @@ function selectChoice(btn, selected, correct){
   },500);
 }
 
+// 結果表示
 function showSummary(timeout=false){
   if(animationFrameId) cancelAnimationFrame(animationFrameId);
   quizArea.classList.add('hidden');
