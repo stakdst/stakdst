@@ -62,12 +62,26 @@ h1 { margin-top:0; text-align:center; }
 .correct { background:#4dabf7 !important; color:#fff; }
 .wrong { background:#ff6b6b !important; color:#fff; }
 /* タイマー */
+/* タイマーを中央に配置するための親要素 */
+#quizArea {
+  text-align: center;  /* ← 子要素（.timer）が中央に */
+}
+/* タイマースタイル */
 .timer { 
-  font-size:1.2rem; font-weight:bold; margin: 10px 0; display:inline-block; 
-  background:#272727; color:#fff; padding:8px 16px; border-radius:20px; 
-  box-shadow:0 4px 10px rgba(0,0,0,0.2); text-align:center; 
+  font-size:1rem;
+  font-weight:bold; 
+  margin: 0px auto;      /* ← 上下は10px, 左右は自動で中央寄せ */
+  display:inline-block;   /* ← 横幅に合わせて中央寄せ可能 */
+  background:#272727; 
+  color:#fff; 
+  padding:6px 12px;
+  border-radius:20px; 
+  box-shadow:0 4px 10px rgba(0,0,0,0.2); 
+  text-align:center; 
   font-family: 'Roboto Mono', 'Noto Mono', monospace;
-  white-space: nowrap; min-width: 300px;
+  white-space: nowrap;
+  min-width:auto;
+  max-width:100%;
 }
 .hidden { display:none; }
 /* 結果画面 */
@@ -2250,7 +2264,7 @@ const globalTimerDiv=document.getElementById('globalTimer');
 const controls=document.getElementById('controls');
 
 function playSound(audioElem) {
-  const s = audioElem.cloneNode(); // 新しいインスタンス
+  const s = audioElem.cloneNode();
   s.playbackRate = audioElem.playbackRate;
   s.volume = audioElem.volume;
   s.play().catch(e => console.log("play error:", e));
@@ -2339,7 +2353,6 @@ function selectChoice(btn, selected, correct){
     correctCount++;
     playSound(correctSound);
 
-    // 0.5秒で次へ
     setTimeout(() => { 
       currentIndex++; 
       showQuestion(); 
