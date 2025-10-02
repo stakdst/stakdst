@@ -4,6 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>英単語テスト</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 body { 
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif; 
@@ -58,18 +59,19 @@ h1 { margin-top:0; text-align:center; }
 }
 .choiceBtn:hover { background:#e0e0ff; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
 .choiceBtn:active { transform: translateY(1px); box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
-.correct { background:#ff6b6b !important; color:#fff; }
-.wrong { background:#4dabf7 !important; color:#fff; }
-/* タイマーを等幅フォントで安定表示 */
+/* 選択後の薄い色 */
+.correct { background:rgba(255,107,107,0.6) !important; color:#fff; }
+.wrong { background:rgba(77,171,247,0.6) !important; color:#fff; }
+/* タイマー */
 .timer { 
   font-size:1.2rem; font-weight:bold; margin: 10px 0; display:inline-block; 
   background:#272727; color:#fff; padding:8px 16px; border-radius:20px; 
   box-shadow:0 4px 10px rgba(0,0,0,0.2); text-align:center; 
-  font-family: "Courier New", Courier, monospace;
+  font-family: 'Roboto Mono', 'Noto Mono', monospace;
   white-space: nowrap; min-width: 300px;
 }
 .hidden { display:none; }
-/* 結果画面スタイル */
+/* 結果画面 */
 #summary { text-align:center; font-family:sans-serif; }
 #summary h2 { font-size:2rem; margin-bottom:15px; }
 #summary p { font-size:1.2rem; margin:5px 0; }
@@ -134,75 +136,69 @@ const wordPairs = [
   {english:"en8", japanese:"ja8", dummy:["a","b","c","d","e","f","g"]}
 ];
 
-let quizList = [], currentIndex=0, correctCount=0, incorrectCount=0, globalTime=0, startTime=0, animationFrameId=null, canSelect=true, totalQuestions=0;
+let quizList=[], currentIndex=0, correctCount=0, incorrectCount=0, globalTime=0, startTime=0, animationFrameId=null, canSelect=true, totalQuestions=0;
 
-const startBtn = document.getElementById('startBtn');
-const rangeStart = document.getElementById('rangeStart');
-const rangeEnd = document.getElementById('rangeEnd');
-const timeInput = document.getElementById('timeInput');
-const choiceCountSelect = document.getElementById('choiceCountSelect');
-const quizArea = document.getElementById('quizArea');
-const englishWordDiv = document.getElementById('englishWord');
-const choicesDiv = document.getElementById('choices');
-const summaryDiv = document.getElementById('summary');
-const globalTimerDiv = document.getElementById('globalTimer');
-const controls = document.getElementById('controls');
+const startBtn=document.getElementById('startBtn');
+const rangeStart=document.getElementById('rangeStart');
+const rangeEnd=document.getElementById('rangeEnd');
+const timeInput=document.getElementById('timeInput');
+const choiceCountSelect=document.getElementById('choiceCountSelect');
+const quizArea=document.getElementById('quizArea');
+const englishWordDiv=document.getElementById('englishWord');
+const choicesDiv=document.getElementById('choices');
+const summaryDiv=document.getElementById('summary');
+const globalTimerDiv=document.getElementById('globalTimer');
+const controls=document.getElementById('controls');
 
 // 範囲変更で制限時間自動設定
-rangeStart.addEventListener('input', updateTimeByRange);
-rangeEnd.addEventListener('input', updateTimeByRange);
+rangeStart.addEventListener('input',updateTimeByRange);
+rangeEnd.addEventListener('input',updateTimeByRange);
 function updateTimeByRange(){
-  const start = parseInt(rangeStart.value)||1;
-  const end = parseInt(rangeEnd.value)||wordPairs.length;
+  const start=parseInt(rangeStart.value)||1;
+  const end=parseInt(rangeEnd.value)||wordPairs.length;
   if(start<1||end<start) return;
-  const count = end - start +1;
-  timeInput.value = Math.ceil(count * 1.5);
+  const count=end-start+1;
+  timeInput.value=Math.ceil(count*1.5);
 }
 
 // スタート
-startBtn.addEventListener('click', ()=>{
-  const start = parseInt(rangeStart.value)||1;
-  const end = parseInt(rangeEnd.value)||wordPairs.length;
-  if(start<1||end>wordPairs.length||start> end){
-    alert("範囲指定が不正です"); return;
-  }
-  quizList = wordPairs.slice(start-1,end);
+startBtn.addEventListener('click',()=>{
+  const start=parseInt(rangeStart.value)||1;
+  const end=parseInt(rangeEnd.value)||wordPairs.length;
+  if(start<1||end>wordPairs.length||start>end){ alert("範囲指定が不正です"); return; }
+  quizList=wordPairs.slice(start-1,end);
   quizList.sort(()=>Math.random()-0.5);
-  totalQuestions = quizList.length;
+  totalQuestions=quizList.length;
   correctCount=0; incorrectCount=0; currentIndex=0; canSelect=true;
 
   quizArea.classList.remove('hidden'); summaryDiv.classList.add('hidden');
   Array.from(controls.querySelectorAll("input,select,button")).forEach(el=>el.disabled=true);
 
-  globalTime = parseFloat(timeInput.value);
-  startTime = performance.now();
+  globalTime=parseFloat(timeInput.value);
+  startTime=performance.now();
   requestAnimationFrame(updateTimer);
   showQuestion();
 });
 
 // 滑らかタイマー
 function updateTimer(timestamp){
-  const elapsed = (timestamp - startTime)/1000;
-  const remain = Math.max(globalTime - elapsed,0);
-  globalTimerDiv.textContent = `正解数: ${correctCount}/${totalQuestions}問       時間: ${remain.toFixed(2)}`;
-  if(remain<=0){
-    showSummary(false,true);
-  }else{
-    animationFrameId = requestAnimationFrame(updateTimer);
-  }
+  const elapsed=(timestamp-startTime)/1000;
+  const remain=Math.max(globalTime-elapsed,0);
+  globalTimerDiv.textContent=`正解数: ${correctCount}/${totalQuestions}問       時間: ${remain.toFixed(2)}`;
+  if(remain<=0){ showSummary(false,true); }
+  else{ animationFrameId=requestAnimationFrame(updateTimer); }
 }
 
 // 問題表示
 function showQuestion(){
   if(currentIndex>=quizList.length){ return showSummary(true,false); }
   canSelect=true;
-  const item = quizList[currentIndex];
+  const item=quizList[currentIndex];
   englishWordDiv.textContent=item.english;
-
-  globalTimerDiv.textContent = `正解数: ${correctCount}/${totalQuestions}問       時間: ${getRemainingTime().toFixed(2)}`;
+  globalTimerDiv.textContent=`正解数: ${correctCount}/${totalQuestions}問       時間: ${getRemainingTime().toFixed(2)}`;
 
   let choices=[item.japanese];
-  const totalChoices = parseInt(choiceCountSelect.value);
+  const totalChoices=parseInt(choiceCountSelect.value);
   let dummies=[...item.dummy]; dummies.sort(()=>Math.random()-0.5);
   while(choices.length<totalChoices && dummies.length>0){ choices.push(dummies.pop()); }
   choices.sort(()=>Math.random()-0.5);
@@ -212,36 +208,28 @@ function showQuestion(){
     const btn=document.createElement('button');
     btn.className="choiceBtn";
     btn.textContent=ch;
-    btn.addEventListener('mousedown', ()=>selectChoice(btn,ch,item.japanese));
-    btn.addEventListener('touchstart',(e)=>{ e.preventDefault(); selectChoice(btn,ch,item.japanese); },{passive:false});
+    btn.addEventListener('mousedown',()=>selectChoice(btn,ch,item.japanese));
+    btn.addEventListener('touchstart',(e)=>{e.preventDefault(); selectChoice(btn,ch,item.japanese);},{passive:false});
     choicesDiv.appendChild(btn);
   });
 }
 
-function getRemainingTime(){ return Math.max(globalTime - (performance.now()-startTime)/1000,0); }
+function getRemainingTime(){ return Math.max(globalTime-(performance.now()-startTime)/1000,0); }
 
-function selectChoice(btn, selected, correct){
+function selectChoice(btn,selected,correct){
   if(!canSelect) return;
   canSelect=false;
-  const buttons = document.querySelectorAll(".choiceBtn");
+  const buttons=document.querySelectorAll(".choiceBtn");
   buttons.forEach(b=>b.disabled=true);
 
-  if(selected===correct){
-    btn.classList.add("correct");
-    correctCount++;
-  }else{
-    buttons.forEach(b=>{
-      if(b.textContent===correct) b.classList.add("correct");
-      else b.classList.add("wrong");
-    });
+  if(selected===correct){ btn.classList.add("correct"); correctCount++; }
+  else{
+    buttons.forEach(b=>{ if(b.textContent===correct) b.classList.add("correct"); else b.classList.add("wrong"); });
     quizList.push(quizList[currentIndex]);
     incorrectCount++;
   }
 
-  setTimeout(()=>{
-    currentIndex++;
-    showQuestion();
-  },500);
+  setTimeout(()=>{ currentIndex++; showQuestion(); },500);
 }
 
 // 結果表示
@@ -256,6 +244,7 @@ function showSummary(cleared=false,timeOut=false){
       <h2>GameOver !</h2>
       <p>CLEARまであと${totalQuestions-currentIndex}問！</p>
       <p>miss: ${incorrectCount}回</p>
+      <p>正解数: ${correctCount}/${totalQuestions}問</p>
     </div>`;
   }else{
     const elapsedTime=((performance.now()-startTime)/1000).toFixed(2);
@@ -263,6 +252,7 @@ function showSummary(cleared=false,timeOut=false){
       <h2>CLEAR!</h2>
       <p>miss: ${incorrectCount}回</p>
       <p>time: ${elapsedTime}秒</p>
+      <p>正解数: ${correctCount}/${totalQuestions}問</p>
     </div>`;
   }
   summaryDiv.innerHTML=cardHTML;
