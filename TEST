@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>英単語4択クイズ (English→日本語)</title>
+<style>
+/* ---- CSS (埋め込み) ---- */
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif; padding: 20px; background:#fafafa; color:#111; }
+.container { max-width: 900px; margin: 0 auto; background:white; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.06); border-radius:8px; }
+h1 { margin-top:0; }
+.controls { margin-bottom: 18px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+.hidden { display:none; }
+.word { font-size: 2rem; margin: 16px 0; }
+.choices { display:flex; flex-direction:column; gap:8px; margin-bottom:12px; }
+.choiceBtn { padding:10px; font-size:1rem; cursor:pointer; border:1px solid #ddd; background:#fff; border-radius:6px; text-align:left; }
+.choiceBtn:hover { box-shadow:0 1px 4px rgba(0,0,0,0.06); }
+#result { margin-top:10px; font-weight:bold; min-height:1.2em; }
+.small { font-size:0.9rem; color:#555; }
+footer { margin-top:18px; font-size:0.85rem; color:#666; }
+.progress { font-weight:600; }
+input[type="file"] { display:inline-block; }
+#summary p { margin:6px 0; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>英単語4択クイズ</h1>
+
+  <div class="controls">
+    <label class="small">CSV (英語,japanese): <input id="fileInput" type="file" accept=".csv" /></label>
+    <button id="loadSample">サンプル200語をロード</button>
+    <label class="small">問題数: <input id="numQuestions" type="number" min="1" max="1700" value="20" style="width:80px" /></label>
+    <button id="startBtn">スタート</button>
+    <button id="downloadTemplate">1700テンプレをダウンロード</button>
+  </div>
+
+  <div id="quizArea" class="hidden">
+    <div class="progress" id="progress">0 / 0</div>
+    <div id="questionArea">
+      <div id="englishWord" class="word"></div>
+      <div id="choices" class="choices"></div>
+    </div>
+    <div id="result"></div>
+    <button id="nextBtn" class="hidden">次へ</button>
+  </div>
+
+  <div id="summary" class="hidden"></div>
+
+  <p class="small">注: CSV をリポジトリに置けば GitHub Pages 上で直接フェッチして利用できます。ローカルで file:// で開くとブラウザの制約で外部ファイルが読めないことがあるので、その場合はローカルサーバ（例: <code>python -m http.server</code>）か GitHub Pages を使ってください。</p>
+
+  <footer>Made for you — 単一ファイル版</footer>
+</div>
+
+<script>
+/* ---- JS (埋め込み) ---- */
+
+/*
+  機能:
+  - 埋め込みの sampleCSV を読み込める
+  - 外部CSVファイルをアップロードして使える
+  - 問題数を指定して4択を出題
+  - words_1700_template をダウンロードするボタン（テンプレCSVを生成）
+*/
+
+// ======= 埋め込みサンプルCSV (200語) =======
+const sampleCSV = `english,japanese
+apple,りんご
+book,本
+cat,猫
+dog,犬
+house,家
+car,車
+water,水
+fire,火
+tree,木
+sun,太陽
+moon,月
+star,星
+food,食べ物
+coffee,コーヒー
+tea,お茶
+mother,母
+father,父
+sister,姉/妹
+brother,兄/弟
+child,子供
+school,学校
+teacher,先生
+student,生徒
+city,都市
+village,村
+river,川
+mountain,山
+ocean,海
+sea,海
+island,島
+road,道
+street,通り
+window,窓
+door,ドア
+key,鍵
+phone,電話
+computer,コンピュータ
+music,音楽
+song,歌
+dance,踊り
+love,愛
+friend,友達
+family,家族
+happy,幸せ
+sad,悲しい
+angry,怒っている
+cold,寒い
+hot,暑い
+big,大きい
+small,小さい
+long,長い
+short,短い
+fast,速い
+slow,遅い
+new,新しい
+old,古い
+young,若い
+beautiful,美しい
+ugly,醜い
+easy,簡単
+difficult,難しい
+strong,強い
+weak,弱い
+rich,裕福な
+poor,貧しい
+clean,きれいな
+dirty,汚い
+black,黒
+white,白
+red,赤
+blue,青
+green,緑
+yellow,黄色
+purple,紫
+pink,ピンク
+gray,灰色
+brown,茶色
+time,時間
+day,日
+night,夜
+morning,朝
+evening,夕方
+year,年
+week,週
+month,月
+today,今日
+yesterday,昨日
+tomorrow,明日
+clock,時計
+minute,分
+second,秒
+money,お金
+price,価格
+cheap,安い
+expensive,高い
+market,市場
+shop,店
+store,店
+bank,銀行
+hospital,病院
+doctor,医者
+nurse,看護師
+medicine,薬
+game,ゲーム
+play,遊ぶ
+work,仕事
+job,職業
+office,オフィス
+meeting,会議
+project,プロジェクト
+internet,インターネット
+email,メール
+password,パスワード
+account,アカウント
+picture,写真
+photo,写真
+camera,カメラ
+film,フィルム
+movie,映画
+actor,俳優
+actress,女優
+director,監督
+writer,作家
+bookstore,本屋
+library,図書館
+kitchen,台所
+bathroom,浴室
+bedroom,寝室
+garden,庭
+park,公園
+bridge,橋
+airport,空港
+station,駅
+ticket,切符
+bag,バッグ
+box,箱
+bottle,ボトル
+glass,グラス
+plate,皿
+knife,ナイフ
+fork,フォーク
+spoon,スプーン
+cup,カップ
+chair,椅子
+table,テーブル
+bed,ベッド
+sofa,ソファ
+television,テレビ
+radio,ラジオ
+poem,詩
+story,物語
+history,歴史
+science,科学
+math,数学
+biology,生物学
+chemistry,化学
+physics,物理学
+language,言語
+english,英語
+japanese,日本語
+chinese,中国語
+spanish,スペイン語
+french,フランス語
+festival,祭り
+party,パーティー
+birthday,誕生日
+wedding,結婚式
+holiday,休日
+vacation,休暇
+trip,旅行
+tour,ツアー
+map,地図
+guide,ガイド
+hotel,ホテル
+room,部屋
+reservation,予約
+checkin,チェックイン
+checkout,チェックアウト
+luggage,荷物
+passport,パスポート
+visa,ビザ
+customs,税関
+police,警察
+law,法律
+court,裁判所
+judge,裁判官
+crime,犯罪
+accident,事故
+insurance,保険
+safety,安全
+danger,危険
+help,助ける
+save,救う
+open,開ける
+close,閉める
+start,始める
+finish,終える
+continue,続ける
+stop,止める
+wait,待つ
+look,見る
+see,見る
+watch,観る
+listen,聞く
+hear,聞く
+speak,話す
+talk,話す
+say,言う
+tell,伝える
+ask,尋ねる
+answer,答える
+read,読む
+write,書く
+count,数える
+measure,測る
+build,建てる
+create,作る
+make,作る
+break,壊す
+fix,修理する
+wash,洗う
+clean,掃除する
+cook,料理する
+eat,食べる
+drink,飲む
+sleep,眠る
+wake,起きる
+walk,歩く
+run,走る
+jump,跳ぶ
+swim,泳ぐ
+fly,飛ぶ
+ride,乗る
+drive,運転する
+buy,買う
+sell,売る
+pay,支払う
+receive,受け取る
+send,送る
+give,与える
+take,取る
+change,変える
+choose,選ぶ
+learn,学ぶ
+teach,教える
+study,勉強する
+remember,覚える
+forget,忘れる
+think,考える
+believe,信じる
+know,知っている
+understand,理解する
+hope,希望する
+wish,願う
+dream,夢
+plan,計画する
+decide,決める
+agree,同意する
+disagree,反対する
+win,勝つ
+lose,負ける
+`;
+
+// ======= グローバル変数 =======
+let wordPairs = []; // {english, japanese}
+let quizList = [];
+let currentIndex = 0;
+let score = 0;
+
+// ======= DOM =======
+const fileInput = document.getElementById('fileInput');
+const loadSampleBtn = document.getElementById('loadSample');
+const startBtn = document.getElementById('startBtn');
+const numQuestionsInput = document.getElementById('numQuestions');
+const quizArea = document.getElementById('quizArea');
+const englishWordDiv = document.getElementById('englishWord');
+const choicesDiv = document.getElementById('choices');
+const progressDiv = document.getElementById('progress');
+const resultDiv = document.getElementById('result');
+const nextBtn = document.getElementById('nextBtn');
+const summaryDiv = document.getElementById('summary');
+const downloadTemplateBtn = document.getElementById('downloadTemplate');
+
+fileInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    parseCSV(reader.result);
+    alert(`CSVを読み込みました。単語数: ${wordPairs.length}`);
+  };
+  reader.readAsText(file, 'utf-8');
+});
+
+loadSampleBtn.addEventListener('click', () => {
+  parseCSV(sampleCSV);
+  alert('サンプル200語をロードしました。');
+});
+
+startBtn.addEventListener('click', () => {
+  const n = Math.max(1, Math.min(1700, parseInt(numQuestionsInput.value || '20')));
+  if (wordPairs.length === 0) {
+    alert('まずCSVをアップロードするか、サンプルをロードしてください。');
+    return;
+  }
+  startQuiz(n);
+});
+
+nextBtn.addEventListener('click', () => {
+  currentIndex++;
+  if (currentIndex >= quizList.length) {
+    showSummary();
+  } else {
+    showQuestion();
+  }
+});
+
+downloadTemplateBtn.addEventListener('click', () => {
+  // generate 1700 template CSV (english,japanese) japaneseは空
+  const base = wordPairs.length ? wordPairs.map(w=>w.english) : ["example1","example2","example3","..."];
+  // generate 1700 by repeating/base variants
+  const out = ["english,japanese"];
+  let i=0, suffix=1;
+  while (out.length-1 < 1700) {
+    if (i < base.length) {
+      out.push(`${base[i]},`);
+    } else {
+      out.push(`${base[i%base.length]}${suffix},`);
+      if ((i-base.length)%base.length===0) suffix++;
+    }
+    i++;
+  }
+  const blob = new Blob([out.join("\n")], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'words_1700_template.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+});
+
+// ======= CSV パーサ（簡易） =======
+function parseCSV(text) {
+  const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l.length>0);
+  if (lines.length === 0) { wordPairs = []; return; }
+  const header = lines.shift().split(',').map(h=>h.trim().toLowerCase());
+  const engIdx = header.findIndex(h=>h.includes('english') || h.includes('word') || h.includes('en'));
+  const jpnIdx = header.findIndex(h=>h.includes('japanese') || h.includes('jp') || h.includes('jpn'));
+  wordPairs = [];
+  for (const line of lines) {
+    // 分割を簡単にする（カンマが訳に含まれる場合は正確性落ちる点に注意）
+    const cols = line.split(',');
+    const eng = (cols[engIdx]||cols[0]||'').trim();
+    const jpn = (cols[jpnIdx]||cols[1]||'').trim();
+    if (eng) wordPairs.push({english:eng, japanese:jpn});
+  }
+}
+
+// ======= Quiz ロジック =======
+function startQuiz(n) {
+  // shuffle wordPairs
+  const shuffled = [...wordPairs].sort(()=>Math.random()-0.5);
+  quizList = shuffled.slice(0, Math.min(n, shuffled.length));
+  currentIndex = 0; score = 0;
+  quizArea.classList.remove('hidden');
+  summaryDiv.classList.add('hidden');
+  showQuestion();
+}
+
+function showQuestion() {
+  resultDiv.textContent = '';
+  nextBtn.classList.add('hidden');
+  const total = quizList.length;
+  progressDiv.textContent = `${currentIndex+1} / ${total}`;
+
+  const item = quizList[currentIndex];
+  englishWordDiv.textContent = item.english;
+
+  // 正解と不正解候補を用意
+  const correct = item.japanese || '(訳が未設定)';
+  const pool = [...new Set(wordPairs.map(w => w.japanese).filter(Boolean))];
+  const wrongs = [];
+  while (wrongs.length < 3 && pool.length > 0) {
+    const c = pool[Math.floor(Math.random()*pool.length)];
+    if (c !== correct && !wrongs.includes(c)) wrongs.push(c);
+  }
+  while (wrongs.length < 3) wrongs.push('—');
+
+  const choices = [correct, ...wrongs].sort(()=>Math.random()-0.5);
+  choicesDiv.innerHTML = '';
+  choices.forEach((ch, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'choiceBtn';
+    btn.textContent = `${String.fromCharCode(65+idx)}. ${ch}`;
+    btn.onclick = () => selectChoice(ch, correct);
+    choicesDiv.appendChild(btn);
+  });
+}
+
+function selectChoice(selected, correct) {
+  const buttons = Array.from(document.querySelectorAll('.choiceBtn'));
+  buttons.forEach(b => b.disabled = true);
+  if (selected === correct) {
+    resultDiv.textContent = '正解！';
+    score++;
+  } else {
+    resultDiv.textContent = `不正解。 正解: ${correct}`;
+  }
+  nextBtn.classList.remove('hidden');
+}
+
+function showSummary() {
+  quizArea.classList.add('hidden');
+  summaryDiv.classList.remove('hidden');
+  summaryDiv.innerHTML = `<h2>結果</h2>
+    <p>正答数: <strong>${score}</strong> / ${quizList.length}</p>
+    <p class="small">このページを GitHub Pages にアップしておくと、いつでも Web 上でアクセスできます。</p>`;
+}
+
+// ======= 初期ロード: 埋め込みサンプルをデフォルトで読み込む（任意） =======
+// parseCSV(sampleCSV);
+// alert('サンプルをデフォルトで読み込みました（必要ならコメントアウトしてください）。');
+
+</script>
+</body>
+</html>
