@@ -28,7 +28,7 @@ input, button { font-size:1rem; padding:4px; }
     <label>範囲: <input id="rangeStart" type="number" min="1" value="1" style="width:70px"> 〜 
       <input id="rangeEnd" type="number" min="1" value="8" style="width:70px"></label>
     <label>制限時間(秒):
-      <input id="timeInput" type="number" min="1" value="8" style="width:70px">
+      <input id="timeInput" type="number" min="1" value="12" style="width:70px">
     </label>
     <button id="startBtn">スタート</button>
   </div>
@@ -56,6 +56,7 @@ const wordPairs = [
 
 let quizList = [];
 let currentIndex = 0;
+let correctCount = 0;
 let incorrectCount = 0;
 let globalTime = 0;
 let startTime = 0;
@@ -73,7 +74,7 @@ const summaryDiv = document.getElementById('summary');
 const globalTimerDiv = document.getElementById('globalTimer');
 const controls = document.getElementById('controls');
 
-// 範囲変更で制限時間自動設定
+// 範囲変更で制限時間自動設定（問題数 × 1.5秒）
 rangeStart.addEventListener('input', updateTimeByRange);
 rangeEnd.addEventListener('input', updateTimeByRange);
 function updateTimeByRange(){
@@ -81,7 +82,7 @@ function updateTimeByRange(){
   const end = parseInt(rangeEnd.value)||wordPairs.length;
   if(start<1||end<start) return;
   const count = end - start +1;
-  timeInput.value = count;
+  timeInput.value = Math.ceil(count * 1.5);
 }
 
 // スタート
@@ -94,6 +95,7 @@ startBtn.addEventListener('click', ()=>{
   quizList = wordPairs.slice(start-1,end);
   quizList.sort(()=>Math.random()-0.5);
 
+  correctCount = 0;
   incorrectCount = 0;
   canSelect = true;
 
@@ -112,7 +114,7 @@ startBtn.addEventListener('click', ()=>{
 function updateTimer(timestamp){
   const elapsed = (timestamp - startTime)/1000;
   const remain = Math.max(globalTime - elapsed,0);
-  globalTimerDiv.textContent = `CLEARまであと${quizList.length - currentIndex}問......！       時間: ${remain.toFixed(2)}`;
+  globalTimerDiv.textContent = `正解数: ${correctCount}/${quizList.length}問       時間: ${remain.toFixed(2)}`;
   if(remain<=0){
     showSummary(false,true); // GameOver
   }else{
@@ -127,8 +129,7 @@ function showQuestion(){
   const item = quizList[currentIndex];
   englishWordDiv.textContent = item.english;
 
-  // 残り問題数更新
-  globalTimerDiv.textContent = `CLEARまであと${quizList.length - currentIndex}問......！       時間: ${getRemainingTime().toFixed(2)}`;
+  globalTimerDiv.textContent = `正解数: ${correctCount}/${quizList.length}問       時間: ${getRemainingTime().toFixed(2)}`;
 
   let choices = [item.japanese];
   let dummies = [...item.dummy];
@@ -165,6 +166,7 @@ function selectChoice(btn, selected, correct){
 
   if(selected===correct){
     btn.classList.add("correct");
+    correctCount++;
   }else{
     buttons.forEach(b=>{
       if(b.textContent===correct) b.classList.add("correct");
