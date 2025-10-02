@@ -125,6 +125,9 @@ h1 { margin-top:0; text-align:center; }
     <div id="choices" class="choices"></div>
   </div>
   <div id="summary" class="hidden"></div>
+
+  <audio id="correctSound" src="correct.mp3" preload="auto"></audio>
+  <audio id="wrongSound" src="wrong.mp3" preload="auto"></audio>
 </div>
 
 <script>
@@ -2253,7 +2256,7 @@ function updateTimeByRange(){
   const end=parseInt(rangeEnd.value)||wordPairs.length;
   if(start<1||end<start) return;
   const count=end-start+1;
-  timeInput.value=Math.ceil(count*1.5);
+  timeInput.value=Math.ceil(count*2);
 }
 
 startBtn.addEventListener('click',()=>{
@@ -2272,6 +2275,11 @@ startBtn.addEventListener('click',()=>{
   startTime=performance.now();
   requestAnimationFrame(updateTimer);
   showQuestion();
+  
+  const correctSound = document.getElementById("correctSound");
+  const wrongSound = document.getElementById("wrongSound");
+  correctSound.playbackRate = 2.0;
+  wrongSound.playbackRate = 2.0;
 });
 
 function updateTimer(timestamp){
@@ -2308,20 +2316,36 @@ function showQuestion(){
 
 function getRemainingTime(){ return Math.max(globalTime-(performance.now()-startTime)/1000,0); }
 
-function selectChoice(btn,selected,correct){
+function selectChoice(btn, selected, correct){
   if(!canSelect) return;
-  canSelect=false;
-  const buttons=document.querySelectorAll(".choiceBtn");
-  buttons.forEach(b=>b.disabled=true);
+  canSelect = false;
 
-  if(selected===correct){ btn.classList.add("correct"); correctCount++; }
-  else{
-    buttons.forEach(b=>{ if(b.textContent===correct) b.classList.add("correct"); else b.classList.add("wrong"); });
+  const buttons = document.querySelectorAll(".choiceBtn");
+  buttons.forEach(b => b.disabled = true);
+
+  const correctSound = document.getElementById("correctSound");
+  const wrongSound = document.getElementById("wrongSound");
+
+  if(selected === correct){
+    btn.classList.add("correct");
+    correctCount++;
+    correctSound.currentTime = 0; // 再生位置リセット
+    correctSound.play();
+  } else {
+    buttons.forEach(b => { 
+      if(b.textContent === correct) b.classList.add("correct"); 
+      else b.classList.add("wrong"); 
+    });
     quizList.push(quizList[currentIndex]);
     incorrectCount++;
+    wrongSound.currentTime = 0;
+    wrongSound.play();
   }
 
-  setTimeout(()=>{ currentIndex++; showQuestion(); },500);
+  setTimeout(() => { 
+    currentIndex++; 
+    showQuestion(); 
+  }, 500);
 }
 
 function showSummary(cleared=false,timeOut=false){
