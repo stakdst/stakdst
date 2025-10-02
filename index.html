@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>英単語4択クイズ (English→日本語)</title>
+<title>英単語4択クイズ</title>
 <style>
 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif; padding: 20px; background:#fafafa; color:#111; }
 .container { max-width: 900px; margin: 0 auto; background:white; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.06); border-radius:8px; }
@@ -16,7 +16,7 @@ h1 { margin-top:0; }
 .correct { background:#ff9999 !important; } 
 .wrong { background:#99ccff !important; }  
 .timer { font-size:1.2rem; font-weight:bold; margin:10px 0; }
-select, input, button { font-size:1rem; padding:4px; }
+input, button { font-size:1rem; padding:4px; }
 .hidden { display:none; }
 </style>
 </head>
@@ -27,8 +27,8 @@ select, input, button { font-size:1rem; padding:4px; }
   <div class="controls" id="controls">
     <label>範囲: <input id="rangeStart" type="number" min="1" value="1" style="width:70px"> 〜 
       <input id="rangeEnd" type="number" min="1" value="8" style="width:70px"></label>
-    <label>制限時間:
-      <select id="timeSelect"></select> 秒
+    <label>制限時間(秒):
+      <input id="timeInput" type="number" min="1" value="8" style="width:70px">
     </label>
     <button id="startBtn">スタート</button>
   </div>
@@ -43,7 +43,6 @@ select, input, button { font-size:1rem; padding:4px; }
 </div>
 
 <script>
-// ===== CSVデータをJS内に埋め込み =====
 const wordPairs = [
   {english:"en1", japanese:"ja1", dummy:["a","b","c","d","e"]},
   {english:"en2", japanese:"ja2", dummy:["a","b","c","d","e"]},
@@ -66,21 +65,24 @@ let canSelect = true;
 const startBtn = document.getElementById('startBtn');
 const rangeStart = document.getElementById('rangeStart');
 const rangeEnd = document.getElementById('rangeEnd');
+const timeInput = document.getElementById('timeInput');
 const quizArea = document.getElementById('quizArea');
 const englishWordDiv = document.getElementById('englishWord');
 const choicesDiv = document.getElementById('choices');
 const summaryDiv = document.getElementById('summary');
 const globalTimerDiv = document.getElementById('globalTimer');
-const timeSelect = document.getElementById('timeSelect');
 const controls = document.getElementById('controls');
 
-// 制限時間セレクト
-for(let t=50;t<=2100;t+=50){
-  const opt = document.createElement('option');
-  opt.value = t; opt.textContent = t;
-  timeSelect.appendChild(opt);
+// 範囲変更で制限時間自動設定
+rangeStart.addEventListener('input', updateTimeByRange);
+rangeEnd.addEventListener('input', updateTimeByRange);
+function updateTimeByRange(){
+  const start = parseInt(rangeStart.value)||1;
+  const end = parseInt(rangeEnd.value)||wordPairs.length;
+  if(start<1||end<start) return;
+  const count = end - start +1;
+  timeInput.value = count;
 }
-timeSelect.value = 200;
 
 // スタート
 startBtn.addEventListener('click', ()=>{
@@ -98,9 +100,9 @@ startBtn.addEventListener('click', ()=>{
   quizArea.classList.remove('hidden');
   summaryDiv.classList.add('hidden');
 
-  Array.from(controls.querySelectorAll("input,select,button")).forEach(el=>el.disabled=true);
+  Array.from(controls.querySelectorAll("input,button")).forEach(el=>el.disabled=true);
 
-  globalTime = parseInt(timeSelect.value);
+  globalTime = parseFloat(timeInput.value);
   startTime = performance.now();
   requestAnimationFrame(updateTimer);
   showQuestion();
@@ -110,9 +112,9 @@ startBtn.addEventListener('click', ()=>{
 function updateTimer(timestamp){
   const elapsed = (timestamp - startTime)/1000;
   const remain = Math.max(globalTime - elapsed,0);
-  globalTimerDiv.textContent = `あと${quizList.length - currentIndex}問       時間: ${remain.toFixed(2)}`;
+  globalTimerDiv.textContent = `CLEARまであと${quizList.length - currentIndex}問......！       時間: ${remain.toFixed(2)}`;
   if(remain<=0){
-    showSummary(false,true); // Game Over
+    showSummary(false,true); // GameOver
   }else{
     animationFrameId = requestAnimationFrame(updateTimer);
   }
@@ -126,9 +128,8 @@ function showQuestion(){
   englishWordDiv.textContent = item.english;
 
   // 残り問題数更新
-  globalTimerDiv.textContent = `あと${quizList.length - currentIndex}問       時間: ${getRemainingTime().toFixed(2)}`;
+  globalTimerDiv.textContent = `CLEARまであと${quizList.length - currentIndex}問......！       時間: ${getRemainingTime().toFixed(2)}`;
 
-  // 選択肢作成
   let choices = [item.japanese];
   let dummies = [...item.dummy];
   while(choices.length<4 && dummies.length>0){
@@ -169,7 +170,7 @@ function selectChoice(btn, selected, correct){
       if(b.textContent===correct) b.classList.add("correct");
       else b.classList.add("wrong");
     });
-    quizList.push(quizList[currentIndex]); // 後ろに回す
+    quizList.push(quizList[currentIndex]); 
     incorrectCount++;
   }
 
@@ -186,8 +187,8 @@ function showSummary(cleared=false,timeOut=false){
   summaryDiv.classList.remove('hidden');
 
   if(timeOut){
-    summaryDiv.innerHTML = `<h2>Game Over......</h2>
-    <p>あと${quizList.length - currentIndex}問！</p>
+    summaryDiv.innerHTML = `<h2>GameOver !</h2>
+    <p>CLEARまであと${quizList.length - currentIndex}問！</p>
     <p>miss: ${incorrectCount}問</p>`;
   }else{
     const elapsedTime = ((performance.now() - startTime)/1000).toFixed(2);
