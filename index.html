@@ -15,7 +15,6 @@ h1 { margin-top:0; }
 .choiceBtn:hover { box-shadow:0 1px 4px rgba(0,0,0,0.06); }
 .correct { background:#ff9999 !important; } /* 赤 */
 .wrong { background:#99ccff !important; }  /* 青 */
-.progress { font-weight:600; }
 .timer { font-size:1.2rem; font-weight:bold; margin:10px 0; }
 select, input, button { font-size:1rem; padding:4px; }
 </style>
@@ -34,7 +33,6 @@ select, input, button { font-size:1rem; padding:4px; }
   </div>
 
   <div id="quizArea" class="hidden">
-    <div class="progress" id="progress">0 / 0</div>
     <div id="globalTimer" class="timer"></div>
     <div id="englishWord" class="word"></div>
     <div id="choices" class="choices"></div>
@@ -64,7 +62,6 @@ const rangeEnd = document.getElementById('rangeEnd');
 const quizArea = document.getElementById('quizArea');
 const englishWordDiv = document.getElementById('englishWord');
 const choicesDiv = document.getElementById('choices');
-const progressDiv = document.getElementById('progress');
 const summaryDiv = document.getElementById('summary');
 const globalTimerDiv = document.getElementById('globalTimer');
 const timeSelect = document.getElementById('timeSelect');
@@ -143,7 +140,6 @@ function showQuestion(){
     return showSummary();
   }
   const item = quizList[currentIndex];
-  progressDiv.textContent = `${currentIndex+1} / ${quizList.length}`;
   englishWordDiv.textContent = item.english;
 
   const correct = item.japanese;
