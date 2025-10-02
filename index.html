@@ -2276,9 +2276,9 @@ startBtn.addEventListener('click',()=>{
   requestAnimationFrame(updateTimer);
   showQuestion();
   
-  const correctSound = document.getElementById("correctSound");
+  // const correctSound = document.getElementById("correctSound");
   const wrongSound = document.getElementById("wrongSound");
-  correctSound.playbackRate = 1.5;
+  // correctSound.playbackRate = 1.5;
   wrongSound.playbackRate = 1.5;
 });
 
@@ -2351,7 +2351,7 @@ function selectChoice(btn, selected, correct){
     setTimeout(() => { 
       currentIndex++; 
       showQuestion(); 
-    }, 800);
+    }, 3000);
   }
 }
 
