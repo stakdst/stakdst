@@ -17,6 +17,7 @@ h1 { margin-top:0; }
 .wrong { background:#99ccff !important; }  /* 青 */
 .timer { font-size:1.2rem; font-weight:bold; margin:10px 0; }
 select, input, button { font-size:1rem; padding:4px; }
+.hidden { display:none; }
 </style>
 </head>
 <body>
@@ -25,7 +26,7 @@ select, input, button { font-size:1rem; padding:4px; }
 
   <div class="controls" id="controls">
     <label>範囲: <input id="rangeStart" type="number" min="1" value="1" style="width:70px"> 〜 
-      <input id="rangeEnd" type="number" min="1" value="200" style="width:70px"></label>
+      <input id="rangeEnd" type="number" min="1" value="1700" style="width:70px"></label>
     <label>制限時間:
       <select id="timeSelect"></select> 秒
     </label>
@@ -42,9 +43,9 @@ select, input, button { font-size:1rem; padding:4px; }
 </div>
 
 <script>
-/* ===== サンプル200語 ===== */
+// ===== サンプル1700語 =====
 const sampleWords = [];
-for (let i=1;i<=200;i++){
+for (let i=1;i<=1700;i++){
   sampleWords.push({english:`word${i}`, japanese:`単語${i}`});
 }
 
@@ -54,6 +55,7 @@ let currentIndex = 0;
 let score = 0;
 let globalTime = 0;
 let globalTimerInterval = null;
+let canSelect = true; // 選択可能フラグ
 
 // DOM
 const startBtn = document.getElementById('startBtn');
@@ -92,10 +94,11 @@ startBtn.addEventListener('click', () => {
   const start = parseInt(rangeStart.value)||1;
   const end = parseInt(rangeEnd.value)||wordPairs.length;
 
-  if (start<1 || end>wordPairs.length || start>=end){
+  if (start<1 || end>wordPairs.length || start> end){
     alert("範囲指定が不正です");
     return;
   }
+
   const selected = wordPairs.slice(start-1,end);
   quizList = [...selected];
   quizList.sort(()=>Math.random()-0.5);
@@ -139,19 +142,20 @@ function showQuestion(){
   if (currentIndex >= quizList.length){
     return showSummary();
   }
+  canSelect = true; // 次の問題で押せるように
   const item = quizList[currentIndex];
   englishWordDiv.textContent = item.english;
 
   const correct = item.japanese;
   const pool = [...wordPairs.map(w=>w.japanese)];
 
-  // ===== 類似度が高すぎる選択肢を除外 =====
+  // 類似度が高すぎる選択肢を除外
   const wrongs = [];
   while (wrongs.length<3){
     const candidate = pool[Math.floor(Math.random()*pool.length)];
-    if (candidate!==correct && !wrongs.includes(candidate)){
+    if(candidate!==correct && !wrongs.includes(candidate)){
       const dist = editDistance(candidate, correct);
-      if(dist>=2) wrongs.push(candidate); // 2文字以上違うもののみ
+      if(dist>=2) wrongs.push(candidate);
     }
   }
   const choices = [correct,...wrongs].sort(()=>Math.random()-0.5);
@@ -162,7 +166,6 @@ function showQuestion(){
     btn.className="choiceBtn";
     btn.textContent=ch;
 
-    // ★ 押した瞬間に判定
     btn.addEventListener("mousedown", ()=>selectChoice(btn,ch,correct));
     btn.addEventListener("touchstart", (e)=>{
       e.preventDefault();
@@ -174,11 +177,14 @@ function showQuestion(){
 }
 
 function selectChoice(btn,selected,correct){
+  if(!canSelect) return; // 判定中は無視
+  canSelect = false;        // 判定中は押せない
+
   const buttons=document.querySelectorAll(".choiceBtn");
   buttons.forEach(b=>b.disabled=true);
 
-  if (selected===correct){
-    btn.classList.add("correct"); // 正解ボタンのみ赤
+  if(selected===correct){
+    btn.classList.add("correct"); // 正解だけ赤
     score++;
   }else{
     buttons.forEach(b=>{
