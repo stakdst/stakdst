@@ -58,7 +58,7 @@ h1 { margin-top:0; text-align:center; }
 }
 .choiceBtn:hover { background:#e0e0ff; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
 .choiceBtn:active { transform: translateY(1px); box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
-/* 選択後の元の濃い色 */
+/* 選択後の濃い色 */
 .correct { background:#ff6b6b !important; color:#fff; }
 .wrong { background:#4dabf7 !important; color:#fff; }
 /* タイマー */
@@ -232,13 +232,15 @@ function showSummary(cleared=false,timeOut=false){
   quizArea.classList.add('hidden'); summaryDiv.classList.remove('hidden');
   Array.from(controls.querySelectorAll("input,select,button")).forEach(el=>el.disabled=false);
 
+  let remainingQuestions = totalQuestions - correctCount; // 修正：残り問題数
+
   let cardHTML='';
   if(timeOut){
     cardHTML=`<div class="summary-card">
       <h2>GameOver !</h2>
       <p>正解数: ${correctCount}/${totalQuestions}問</p>
       <p>miss: ${incorrectCount}回</p>
-      <p>CLEARまであと${totalQuestions-currentIndex}問！</p>
+      <p>CLEARまであと${remainingQuestions}問！</p>
     </div>`;
   }else{
     const elapsedTime=((performance.now()-startTime)/1000).toFixed(2);
