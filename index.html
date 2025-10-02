@@ -2250,7 +2250,9 @@ const globalTimerDiv=document.getElementById('globalTimer');
 const controls=document.getElementById('controls');
 
 function playSound(audioElem) {
-  const s = audioElem.cloneNode(); // 新しいコピーを作る
+  const s = audioElem.cloneNode(); // 新しいインスタンス
+  s.playbackRate = audioElem.playbackRate;
+  s.volume = audioElem.volume;
   s.play().catch(e => console.log("play error:", e));
 }
 
