@@ -33,7 +33,6 @@ h1 { margin-top:0; text-align:center; }
   padding:10px 20px; 
   border-radius:8px; 
   background:#4dabf7; 
-  background:#f74d4d; 
   color:#fff; 
   border:none; 
   cursor:pointer; 
@@ -2357,23 +2356,20 @@ function selectChoice(btn, selected, correct){
       currentIndex++; 
       showQuestion(); 
     }, 500);
-} else {
-  buttons.forEach(b => { 
-    if(b.textContent === correct) {
-      b.classList.add("correct");  // ← 本来は正解なので correct に
-    } else if(b === btn) {
-      b.classList.add("wrong");    // ← 選んだボタンは wrong
-    }
-  });
-  quizList.push(quizList[currentIndex]);
-  incorrectCount++;
-  playSound(wrongSound);
 
-  setTimeout(() => { 
-    currentIndex++; 
-    showQuestion(); 
-  }, 800);
-}
+  } else {
+    buttons.forEach(b => { 
+      if(b.textContent === correct) b.classList.add("wrong"); 
+    });
+    quizList.push(quizList[currentIndex]);
+    incorrectCount++;
+    playSound(wrongSound);
+
+    setTimeout(() => { 
+      currentIndex++; 
+      showQuestion(); 
+    }, 800);
+  }
 }
 
 function showSummary(cleared=false,timeOut=false){
