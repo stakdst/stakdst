@@ -30,8 +30,8 @@ input, select, button { font-size:1rem; padding:4px; }
     <label>制限時間(秒):
       <input id="timeInput" type="number" min="1" value="12" style="width:70px">
     </label>
-    <label>ダミー数:
-      <select id="dummyCountSelect">
+    <label>選択肢数:
+      <select id="choiceCountSelect">
         <option value="2">2</option>
         <option value="3">3</option>
         <option value="4" selected>4</option>
@@ -54,14 +54,14 @@ input, select, button { font-size:1rem; padding:4px; }
 
 <script>
 const wordPairs = [
-  {english:"en1", japanese:"ja1", dummy:["a","b","c","d","e"]},
-  {english:"en2", japanese:"ja2", dummy:["a","b","c","d","e"]},
-  {english:"en3", japanese:"ja3", dummy:["a","b","c","d","e"]},
-  {english:"en4", japanese:"ja4", dummy:["a","b","c","d","e"]},
-  {english:"en5", japanese:"ja5", dummy:["a","b","c","d","e"]},
-  {english:"en6", japanese:"ja6", dummy:["a","b","c","d","e"]},
-  {english:"en7", japanese:"ja7", dummy:["a","b","c","d","e"]},
-  {english:"en8", japanese:"ja8", dummy:["a","b","c","d","e"]}
+  {english:"en1", japanese:"ja1", dummy:["a","b","c","d","e","f","g"]},
+  {english:"en2", japanese:"ja2", dummy:["a","b","c","d","e","f","g"]},
+  {english:"en3", japanese:"ja3", dummy:["a","b","c","d","e","f","g"]},
+  {english:"en4", japanese:"ja4", dummy:["a","b","c","d","e","f","g"]},
+  {english:"en5", japanese:"ja5", dummy:["a","b","c","d","e","f","g"]},
+  {english:"en6", japanese:"ja6", dummy:["a","b","c","d","e","f","g"]},
+  {english:"en7", japanese:"ja7", dummy:["a","b","c","d","e","f","g"]},
+  {english:"en8", japanese:"ja8", dummy:["a","b","c","d","e","f","g"]}
 ];
 
 let quizList = [];
@@ -77,7 +77,7 @@ const startBtn = document.getElementById('startBtn');
 const rangeStart = document.getElementById('rangeStart');
 const rangeEnd = document.getElementById('rangeEnd');
 const timeInput = document.getElementById('timeInput');
-const dummyCountSelect = document.getElementById('dummyCountSelect');
+const choiceCountSelect = document.getElementById('choiceCountSelect');
 const quizArea = document.getElementById('quizArea');
 const englishWordDiv = document.getElementById('englishWord');
 const choicesDiv = document.getElementById('choices');
@@ -143,10 +143,10 @@ function showQuestion(){
   globalTimerDiv.textContent = `正解数: ${correctCount}/${quizList.length}問       時間: ${getRemainingTime().toFixed(2)}`;
 
   let choices = [item.japanese];
-  let dummyCount = parseInt(dummyCountSelect.value);
+  const totalChoices = parseInt(choiceCountSelect.value);
   let dummies = [...item.dummy];
   dummies.sort(()=>Math.random()-0.5);
-  while(choices.length < Math.min(dummyCount+1,dummies.length+1)){
+  while(choices.length < totalChoices && dummies.length > 0){
     choices.push(dummies.pop());
   }
   choices.sort(()=>Math.random()-0.5);
