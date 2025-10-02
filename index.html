@@ -57,7 +57,7 @@ const wordPairs = [
 
 let quizList = [];
 let currentIndex = 0;
-let score = 0;
+let incorrectCount = 0;
 let globalTime = 0;
 let startTime = 0;
 let animationFrameId = null;
@@ -92,8 +92,7 @@ startBtn.addEventListener('click', ()=>{
   quizList = wordPairs.slice(start-1,end);
   quizList.sort(()=>Math.random()-0.5);
 
-  globalTime = parseInt(timeSelect.value);
-  score = 0; currentIndex = 0;
+  incorrectCount = 0;
   canSelect = true;
 
   quizArea.classList.remove('hidden');
@@ -101,6 +100,7 @@ startBtn.addEventListener('click', ()=>{
 
   Array.from(controls.querySelectorAll("input,select,button")).forEach(el=>el.disabled=true);
 
+  globalTime = parseInt(timeSelect.value);
   startTime = performance.now();
   requestAnimationFrame(updateTimer);
   showQuestion();
@@ -125,7 +125,7 @@ function showQuestion(){
   const item = quizList[currentIndex];
   englishWordDiv.textContent = item.english;
 
-  // 残り問題数の更新をここで実施（正解確認後の更新）
+  // 残り問題数更新
   globalTimerDiv.textContent = `あと${quizList.length - currentIndex}問       時間: ${getRemainingTime().toFixed(2)}`;
 
   // 選択肢作成
@@ -164,16 +164,15 @@ function selectChoice(btn, selected, correct){
 
   if(selected===correct){
     btn.classList.add("correct");
-    score++;
   }else{
     buttons.forEach(b=>{
       if(b.textContent===correct) b.classList.add("correct");
       else b.classList.add("wrong");
     });
     quizList.push(quizList[currentIndex]); // 後ろに回す
+    incorrectCount++;
   }
 
-  // 0.5秒後に次の問題表示
   setTimeout(()=>{
     currentIndex++;
     showQuestion();
@@ -185,8 +184,10 @@ function showSummary(timeout=false){
   if(animationFrameId) cancelAnimationFrame(animationFrameId);
   quizArea.classList.add('hidden');
   summaryDiv.classList.remove('hidden');
-  summaryDiv.innerHTML = `<h2>結果</h2>
-  <p>${timeout?"時間切れ！ ":""}正答数: ${score} / ${quizList.length}</p>`;
+  const elapsedTime = ((performance.now() - startTime)/1000).toFixed(2);
+  summaryDiv.innerHTML = `<h2>CLEAR!</h2>
+  <p>不正解回数: ${incorrectCount}</p>
+  <p>経過時間: ${elapsedTime}秒</p>`;
 }
 </script>
 </body>
