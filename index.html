@@ -58,8 +58,10 @@ h1 { margin-top:0; text-align:center; }
 }
 .choiceBtn:hover { background:#e0e0ff; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
 .choiceBtn:active { transform: translateY(1px); box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+/* 選択後の濃い色 */
 .correct { background:#ff6b6b !important; color:#fff; }
 .wrong { background:#4dabf7 !important; color:#fff; }
+/* タイマー */
 .timer { 
   font-size:1.2rem; font-weight:bold; margin: 10px 0; display:inline-block; 
   background:#272727; color:#fff; padding:8px 16px; border-radius:20px; 
@@ -68,6 +70,7 @@ h1 { margin-top:0; text-align:center; }
   white-space: nowrap; min-width: 300px;
 }
 .hidden { display:none; }
+/* 結果画面 */
 #summary { text-align:center; font-family:sans-serif; }
 #summary h2 { font-size:2rem; margin-bottom:15px; }
 .summary-card {
@@ -78,21 +81,13 @@ h1 { margin-top:0; text-align:center; }
   box-shadow:0 10px 30px rgba(0,0,0,0.15);
   min-width:300px;
 }
-.result-line {
-  display:flex;
-  justify-content:flex-start;
-  gap:10px;
-  font-size:1.2rem;
-  margin:5px 0;
+.result-row { 
+  display:flex; justify-content:center; margin:5px 0; font-size:1.2rem; 
 }
-.result-line span.label {
-  width:90px;
-  text-align:right;
-}
-.result-line span.value {
-  font-family: 'Roboto Mono', 'Noto Mono', monospace;
-  text-align:left;
-}
+.result-label { flex:1; text-align:right; padding-right:5px; }
+.result-value { flex:1; text-align:left; padding-left:5px; }
+
+/* モバイル対応 */
 @media (max-width: 600px) {
   .choiceBtn { font-size: 1.3rem; padding:16px; }
   .word { font-size: 2.5rem; padding:24px; }
@@ -197,14 +192,6 @@ function updateTimer(timestamp){
 function showQuestion(){
   if(currentIndex>=quizList.length){ return showSummary(true,false); }
   canSelect=true;
-
-  // 前の問題の選択状態をリセット
-  const prevButtons = document.querySelectorAll(".choiceBtn");
-  prevButtons.forEach(b => {
-    b.classList.remove("correct", "wrong");
-    b.disabled = false;
-  });
-
   const item=quizList[currentIndex];
   englishWordDiv.textContent=item.english;
   globalTimerDiv.textContent=`正解数: ${correctCount}/${totalQuestions}問       時間: ${getRemainingTime().toFixed(2)}`;
@@ -255,17 +242,17 @@ function showSummary(cleared=false,timeOut=false){
   if(timeOut){
     cardHTML=`<div class="summary-card">
       <h2>GameOver !</h2>
-      <div class="result-line"><span class="label">正解数:</span><span class="value">${correctCount}/${totalQuestions}問</span></div>
-      <div class="result-line"><span class="label">miss:</span><span class="value">${incorrectCount}回</span></div>
-      <div class="result-line"><span class="label">CLEARまであと:</span><span class="value">${remainingQuestions}問！</span></div>
+      <div class="result-row"><span class="result-label">正解数</span><span class="result-value">${correctCount}/${totalQuestions}問</span></div>
+      <div class="result-row"><span class="result-label">miss</span><span class="result-value">${incorrectCount}回</span></div>
+      <div class="result-row"><span class="result-label">CLEARまであと</span><span class="result-value">${remainingQuestions}問！</span></div>
     </div>`;
   }else{
     const elapsedTime=((performance.now()-startTime)/1000).toFixed(2);
     cardHTML=`<div class="summary-card">
       <h2>CLEAR!</h2>
-      <div class="result-line"><span class="label">正解数:</span><span class="value">${correctCount}/${totalQuestions}問</span></div>
-      <div class="result-line"><span class="label">miss:</span><span class="value">${incorrectCount}回</span></div>
-      <div class="result-line"><span class="label">time:</span><span class="value">${elapsedTime}秒</span></div>
+      <div class="result-row"><span class="result-label">正解数</span><span class="result-value">${correctCount}/${totalQuestions}問</span></div>
+      <div class="result-row"><span class="result-label">miss</span><span class="result-value">${incorrectCount}回</span></div>
+      <div class="result-row"><span class="result-label">time</span><span class="result-value">${elapsedTime}秒</span></div>
     </div>`;
   }
   summaryDiv.innerHTML=cardHTML;
