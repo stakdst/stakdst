@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>英単語4択クイズ</title>
+<title>英単語テスト</title>
 <style>
 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif; padding: 20px; background:#fafafa; color:#111; }
 .container { max-width: 900px; margin: 0 auto; background:white; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.06); border-radius:8px; }
@@ -22,7 +22,7 @@ input, select, button { font-size:1rem; padding:4px; }
 </head>
 <body>
 <div class="container">
-  <h1>英単語4択クイズ</h1>
+  <h1>英単語テスト</h1>
 
   <div class="controls" id="controls">
     <label>範囲: <input id="rangeStart" type="number" min="1" value="1" style="width:70px"> 〜 
@@ -30,14 +30,15 @@ input, select, button { font-size:1rem; padding:4px; }
     <label>制限時間(秒):
       <input id="timeInput" type="number" min="1" value="12" style="width:70px">
     </label>
-    <label>選択肢数:
+    <label>選択肢:
       <select id="choiceCountSelect">
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4" selected>4</option>
-        <option value="5">5</option>
-        <option value="6">6</option>
-        <option value="7">7</option>
+        <option value="2">2 個</option>
+        <option value="3">3 個</option>
+        <option value="4" selected>4 個</option>
+        <option value="5">5 個</option>
+        <option value="6">6 個</option>
+        <option value="7">7 個</option>
+        <option value="8">8 個</option>
       </select>
     </label>
     <button id="startBtn">スタート</button>
