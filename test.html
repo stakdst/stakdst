@@ -4,7 +4,6 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>英単語テスト</title>
-<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 body { 
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif; 
@@ -59,9 +58,9 @@ h1 { margin-top:0; text-align:center; }
 }
 .choiceBtn:hover { background:#e0e0ff; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
 .choiceBtn:active { transform: translateY(1px); box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
-/* 選択後の薄い色 */
-.correct { background:rgba(255,107,107,0.6) !important; color:#fff; }
-.wrong { background:rgba(77,171,247,0.6) !important; color:#fff; }
+/* 選択後の元の濃い色 */
+.correct { background:#ff6b6b !important; color:#fff; }
+.wrong { background:#4dabf7 !important; color:#fff; }
 /* タイマー */
 .timer { 
   font-size:1.2rem; font-weight:bold; margin: 10px 0; display:inline-block; 
@@ -150,7 +149,6 @@ const summaryDiv=document.getElementById('summary');
 const globalTimerDiv=document.getElementById('globalTimer');
 const controls=document.getElementById('controls');
 
-// 範囲変更で制限時間自動設定
 rangeStart.addEventListener('input',updateTimeByRange);
 rangeEnd.addEventListener('input',updateTimeByRange);
 function updateTimeByRange(){
@@ -161,7 +159,6 @@ function updateTimeByRange(){
   timeInput.value=Math.ceil(count*1.5);
 }
 
-// スタート
 startBtn.addEventListener('click',()=>{
   const start=parseInt(rangeStart.value)||1;
   const end=parseInt(rangeEnd.value)||wordPairs.length;
@@ -180,7 +177,6 @@ startBtn.addEventListener('click',()=>{
   showQuestion();
 });
 
-// 滑らかタイマー
 function updateTimer(timestamp){
   const elapsed=(timestamp-startTime)/1000;
   const remain=Math.max(globalTime-elapsed,0);
@@ -189,7 +185,6 @@ function updateTimer(timestamp){
   else{ animationFrameId=requestAnimationFrame(updateTimer); }
 }
 
-// 問題表示
 function showQuestion(){
   if(currentIndex>=quizList.length){ return showSummary(true,false); }
   canSelect=true;
@@ -232,7 +227,6 @@ function selectChoice(btn,selected,correct){
   setTimeout(()=>{ currentIndex++; showQuestion(); },500);
 }
 
-// 結果表示
 function showSummary(cleared=false,timeOut=false){
   if(animationFrameId) cancelAnimationFrame(animationFrameId);
   quizArea.classList.add('hidden'); summaryDiv.classList.remove('hidden');
@@ -242,17 +236,17 @@ function showSummary(cleared=false,timeOut=false){
   if(timeOut){
     cardHTML=`<div class="summary-card">
       <h2>GameOver !</h2>
-      <p>CLEARまであと${totalQuestions-currentIndex}問！</p>
-      <p>miss: ${incorrectCount}回</p>
       <p>正解数: ${correctCount}/${totalQuestions}問</p>
+      <p>miss: ${incorrectCount}回</p>
+      <p>CLEARまであと${totalQuestions-currentIndex}問！</p>
     </div>`;
   }else{
     const elapsedTime=((performance.now()-startTime)/1000).toFixed(2);
     cardHTML=`<div class="summary-card">
       <h2>CLEAR!</h2>
+      <p>正解数: ${correctCount}/${totalQuestions}問</p>
       <p>miss: ${incorrectCount}回</p>
       <p>time: ${elapsedTime}秒</p>
-      <p>正解数: ${correctCount}/${totalQuestions}問</p>
     </div>`;
   }
   summaryDiv.innerHTML=cardHTML;
