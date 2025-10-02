@@ -15,17 +15,16 @@ h1 { margin-top:0; }
 .choiceBtn:hover { box-shadow:0 1px 4px rgba(0,0,0,0.06); }
 .correct { background:#ff9999 !important; } /* 赤 */
 .wrong { background:#99ccff !important; }  /* 青 */
-footer { margin-top:18px; font-size:0.85rem; color:#666; }
 .progress { font-weight:600; }
 .timer { font-size:1.2rem; font-weight:bold; margin:10px 0; }
-select { font-size:1rem; padding:4px; }
+select, input, button { font-size:1rem; padding:4px; }
 </style>
 </head>
 <body>
 <div class="container">
-  <h1>単語4択クイズ</h1>
+  <h1>英単語4択クイズ</h1>
 
-  <div class="controls">
+  <div class="controls" id="controls">
     <label>範囲: <input id="rangeStart" type="number" min="1" value="1" style="width:70px"> 〜 
       <input id="rangeEnd" type="number" min="1" value="200" style="width:70px"></label>
     <label>制限時間:
@@ -42,7 +41,6 @@ select { font-size:1rem; padding:4px; }
   </div>
 
   <div id="summary" class="hidden"></div>
-  <footer>単一ファイル版</footer>
 </div>
 
 <script>
@@ -70,6 +68,7 @@ const progressDiv = document.getElementById('progress');
 const summaryDiv = document.getElementById('summary');
 const globalTimerDiv = document.getElementById('globalTimer');
 const timeSelect = document.getElementById('timeSelect');
+const controls = document.getElementById('controls');
 
 // ===== 制限時間セレクトを作成 (50〜2100秒, 50刻み) =====
 for (let t=50; t<=2100; t+=50){
@@ -96,6 +95,9 @@ startBtn.addEventListener('click', () => {
   score=0; currentIndex=0;
   quizArea.classList.remove('hidden');
   summaryDiv.classList.add('hidden');
+
+  // コントロールを無効化
+  Array.from(controls.querySelectorAll("input,select,button")).forEach(el=>el.disabled=true);
 
   startGlobalTimer();
   showQuestion();
@@ -140,25 +142,33 @@ function showQuestion(){
     const btn=document.createElement("button");
     btn.className="choiceBtn";
     btn.textContent=ch;
-    btn.onclick=()=>selectChoice(btn,ch,correct);
+
+    // ★ 押した瞬間に判定
+    btn.addEventListener("mousedown", ()=>selectChoice(btn,ch,correct));
+    btn.addEventListener("touchstart", (e)=>{
+      e.preventDefault(); // touchend の二重発火防止
+      selectChoice(btn,ch,correct);
+    }, {passive:false});
+
     choicesDiv.appendChild(btn);
   });
 }
 
 function selectChoice(btn,selected,correct){
   const buttons=document.querySelectorAll(".choiceBtn");
-  buttons.forEach(b=>{
-    b.disabled=true;
-    if (b.textContent===correct){
-      b.classList.add("correct");
-    }else{
-      b.classList.add("wrong");
-    }
-  });
+  buttons.forEach(b=>b.disabled=true);
 
   if (selected===correct){
+    btn.classList.add("correct");
     score++;
   }else{
+    buttons.forEach(b=>{
+      if (b.textContent===correct){
+        b.classList.add("correct");
+      }else{
+        b.classList.add("wrong");
+      }
+    });
     quizList.push(quizList[currentIndex]); // 後ろに回す
   }
   setTimeout(()=>{ currentIndex++; showQuestion(); },500);
