@@ -2278,7 +2278,7 @@ startBtn.addEventListener('click',()=>{
   
   const correctSound = document.getElementById("correctSound");
   const wrongSound = document.getElementById("wrongSound");
-  correctSound.playbackRate = 1.2;
+  correctSound.playbackRate = 1.5;
   wrongSound.playbackRate = 1.5;
 });
 
@@ -2329,23 +2329,30 @@ function selectChoice(btn, selected, correct){
   if(selected === correct){
     btn.classList.add("correct");
     correctCount++;
-    correctSound.currentTime = 0; // 再生位置リセット
+    correctSound.currentTime = 0;
     correctSound.play();
+
+    // 0.5秒で次へ
+    setTimeout(() => { 
+      currentIndex++; 
+      showQuestion(); 
+    }, 500);
+
   } else {
     buttons.forEach(b => { 
-      if(b.textContent === correct) b.classList.add("correct"); 
-      else b.classList.add("wrong"); 
+      if(b.textContent === correct) b.classList.add("wrong"); 
     });
     quizList.push(quizList[currentIndex]);
     incorrectCount++;
     wrongSound.currentTime = 0;
     wrongSound.play();
-  }
 
-  setTimeout(() => { 
-    currentIndex++; 
-    showQuestion(); 
-  }, 500);
+    // 1秒で次へ
+    setTimeout(() => { 
+      currentIndex++; 
+      showQuestion(); 
+    }, 800);
+  }
 }
 
 function showSummary(cleared=false,timeOut=false){
