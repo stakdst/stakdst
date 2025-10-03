@@ -144,6 +144,157 @@ h1 { margin-top:0; text-align:center; }
 </div>
 
 <script>
+let quizList=[], currentIndex=0, correctCount=0, incorrectCount=0, globalTime=0, startTime=0, animationFrameId=null, canSelect=true, totalQuestions=0;
+
+const startBtn=document.getElementById('startBtn');
+const rangeStart=document.getElementById('rangeStart');
+const rangeEnd=document.getElementById('rangeEnd');
+const timeInput=document.getElementById('timeInput');
+const choiceCountSelect=document.getElementById('choiceCountSelect');
+const quizArea=document.getElementById('quizArea');
+const englishWordDiv=document.getElementById('englishWord');
+const choicesDiv=document.getElementById('choices');
+const summaryDiv=document.getElementById('summary');
+const globalTimerDiv=document.getElementById('globalTimer');
+const controls=document.getElementById('controls');
+
+function playSound(audioElem) {
+  const s = audioElem.cloneNode();
+  s.playbackRate = audioElem.playbackRate;
+  s.volume = audioElem.volume;
+  s.play().catch(e => console.log("play error:", e));
+}
+
+rangeStart.addEventListener('input',updateTimeByRange);
+rangeEnd.addEventListener('input',updateTimeByRange);
+function updateTimeByRange(){
+  const start=parseInt(rangeStart.value)||1;
+  const end=parseInt(rangeEnd.value)||wordPairs.length;
+  if(start<1||end<start) return;
+  const count=end-start+1;
+  timeInput.value=Math.ceil(count*2);
+}
+
+startBtn.addEventListener('click',()=>{
+  const start=parseInt(rangeStart.value)||1;
+  const end=parseInt(rangeEnd.value)||wordPairs.length;
+  if(start<1||end>wordPairs.length||start>end){ alert("範囲指定が不正です"); return; }
+  quizList=wordPairs.slice(start-1,end);
+  quizList.sort(()=>Math.random()-0.5);
+  totalQuestions=quizList.length;
+  correctCount=0; incorrectCount=0; currentIndex=0; canSelect=true;
+
+  quizArea.classList.remove('hidden'); summaryDiv.classList.add('hidden');
+  Array.from(controls.querySelectorAll("input,select,button")).forEach(el=>el.disabled=true);
+
+  globalTime=parseFloat(timeInput.value);
+  startTime=performance.now();
+  requestAnimationFrame(updateTimer);
+  showQuestion();
+  
+  const correctSound = document.getElementById("correctSound");
+  const wrongSound = document.getElementById("wrongSound");
+
+  correctSound.playbackRate = 1.8;
+  wrongSound.playbackRate = 1.5;
+});
+
+function updateTimer(timestamp){
+  const elapsed=(timestamp-startTime)/1000;
+  const remain=Math.max(globalTime-elapsed,0);
+  globalTimerDiv.textContent=`正解数: ${correctCount}/${totalQuestions}問       時間: ${remain.toFixed(2)}`;
+  if(remain<=0){ showSummary(false,true); }
+  else{ animationFrameId=requestAnimationFrame(updateTimer); }
+}
+
+function showQuestion(){
+  if(currentIndex>=quizList.length){ return showSummary(true,false); }
+  canSelect=true;
+  const item=quizList[currentIndex];
+  englishWordDiv.textContent=item.english;
+  globalTimerDiv.textContent=`正解数: ${correctCount}/${totalQuestions}問       時間: ${getRemainingTime().toFixed(2)}`;
+
+  let choices=[item.japanese];
+  const totalChoices=parseInt(choiceCountSelect.value);
+  let dummies=[...item.dummy]; dummies.sort(()=>Math.random()-0.5);
+  while(choices.length<totalChoices && dummies.length>0){ choices.push(dummies.pop()); }
+  choices.sort(()=>Math.random()-0.5);
+
+  choicesDiv.innerHTML="";
+  choices.forEach(ch=>{
+    const btn=document.createElement('button');
+    btn.className="choiceBtn";
+    btn.textContent=ch;
+    btn.addEventListener('mousedown',()=>selectChoice(btn,ch,item.japanese));
+    btn.addEventListener('touchstart',(e)=>{e.preventDefault(); selectChoice(btn,ch,item.japanese);},{passive:false});
+    choicesDiv.appendChild(btn);
+  });
+}
+
+function getRemainingTime(){ return Math.max(globalTime-(performance.now()-startTime)/1000,0); }
+
+function selectChoice(btn, selected, correct){
+  if(!canSelect) return;
+  canSelect = false;
+
+  const buttons = document.querySelectorAll(".choiceBtn");
+  buttons.forEach(b => b.disabled = true);
+
+  const correctSound = document.getElementById("correctSound");
+  const wrongSound = document.getElementById("wrongSound");
+
+  if(selected === correct){
+    btn.classList.add("correct");
+    correctCount++;
+    playSound(correctSound);
+
+    setTimeout(() => { 
+      currentIndex++; 
+      showQuestion(); 
+    }, 500);
+
+  } else {
+    buttons.forEach(b => { 
+      if(b.textContent === correct) b.classList.add("wrong"); 
+    });
+    quizList.push(quizList[currentIndex]);
+    incorrectCount++;
+    playSound(wrongSound);
+
+    setTimeout(() => { 
+      currentIndex++; 
+      showQuestion(); 
+    }, 800);
+  }
+}
+
+function showSummary(cleared=false,timeOut=false){
+  if(animationFrameId) cancelAnimationFrame(animationFrameId);
+  quizArea.classList.add('hidden'); summaryDiv.classList.remove('hidden');
+  Array.from(controls.querySelectorAll("input,select,button")).forEach(el=>el.disabled=false);
+
+  let remainingQuestions = totalQuestions - correctCount; 
+
+  let cardHTML='';
+  if(timeOut){
+    cardHTML=`<div class="summary-card">
+      <h2>GameOver !</h2>
+      <div class="result-row"><span class="result-label">正解数</span><span class="result-value">${correctCount}/${totalQuestions}問</span></div>
+      <div class="result-row"><span class="result-label">miss</span><span class="result-value">${incorrectCount}回</span></div>
+      <div class="result-row"><span class="result-label">あと</span><span class="result-value">${remainingQuestions}問</span></div>
+    </div>`;
+  }else{
+    const elapsedTime=((performance.now()-startTime)/1000).toFixed(2);
+    cardHTML=`<div class="summary-card">
+      <h2>CLEAR!</h2>
+      <div class="result-row"><span class="result-label">正解数</span><span class="result-value">${correctCount}/${totalQuestions}問</span></div>
+      <div class="result-row"><span class="result-label">miss</span><span class="result-value">${incorrectCount}回</span></div>
+      <div class="result-row"><span class="result-label">time</span><span class="result-value">${elapsedTime}秒</span></div>
+    </div>`;
+  }
+  summaryDiv.innerHTML=cardHTML;
+}
+
 const wordPairs = [
   {english:"follow", japanese:"に続く,に従う", dummy:['を認める', '積極的な', '神経細胞', '商人', '毒', '構造', '代表して', '効率がいい', '補助金', 'を許す', '莫大な', '版', 'まさる', '子孫', '最も重要な', '干ばつ', '達成する', '省く', '険しい', '列', '発音する', '自由主義の', '腫瘍', '激怒した', '植生', 'を避ける', '乗り出す', '機会', '思春期の', '最近の', '心からの', '悲しむ', 'かかりやすい', '偶然', '進む', 'を理解する', '冊', '好奇心の強い', '残り,休息', '手段', '利益', '自動運転', 'まゆをひそめる', '飲み物', '請求書,紙幣,法案', '誓う', 'を設立する', '反逆者', '移住する', '衛星', '選択の自由', 'を保持する', '慈善', '孤立している', '監督者', '発送', 'を育てる', '才能', '一時的な', '装置', 'を危険にさらす', '財産', '不意に', '喜ぶ', '後者の', '不安な', '主題,テーマ', '感謝している', 'に返答する', '水準', '胸に抱く', '宇宙', 'を受け入れる', '止める', '切望する', '軌道', 'と主張する', '合併する', '文明', '会議', '存在する', '妥当な,正当な', '予知する', '良心', 'ぼやかす', '聴衆,観客', '秘書', '意味,感覚', '不器用な', '主に', 'を非難する', '境界', '部下', 'ガン', '謎', 'ついに', '牧草地', '生理的な', '駆りたてる', '刑']},
   {english:"consider", japanese:"を考慮する", dummy:['ボーッと光る', 'を認める', '損失', '誓う', '操作する', '結果', 'しないように', '移民', '終点', 'を保護する', '避難する', 'およそ', 'かく', 'を夢中にさせる', '義務,関税', '災害', 'それゆえに', '引き締まった,きつい', '道,方法,点', '関係なく', '続く', '包括的な', '契約', 'はね返る', 'その上', 'のどが渇く', '検索する', '広大な', '医学の', '改正,修正', '関係がある', '距離', 'を可能にする', '積み重ね', '施行する', '落とす', 'と主張する', 'を除いて', '導く,繋がる', '検定', '利用する,開発する', '以内で', 'そらす', 'を予言する', '精神', '精力的な', '語法', '車輪', '暴露する', '蓄積する', '広まっている', '棒,極', '収穫', '比較的', '暗唱する', '明らかにする', '職業,占領', '休止', '感謝している', 'ままでいる', '貴族階級', '一致する', '強烈な', '受け入れる,含む', 'を救助する', 'を決意する', '大陸', '商業', '差し込む', 'を転換する', 'を禁じる', 'いかさまをする', 'を促す', 'を許可する', '咲く', 'を表す', 'を脅迫する', '与える', '市長', '下水', '残念な', '産出する,屈する', '(手)をたたく', 'に貢献する', '精神の', '永久', 'を制限する', '浅い', '神話', '安心させる', 'を縫う', '量', '規律,分野', '具現する', 'いたずらな', '止める', 'に反対する', 'を後悔する', '失礼な', '飼いならす']},
@@ -2247,157 +2398,6 @@ const wordPairs = [
   {english:"due", japanese:"〜のせいで,～予定の,当然の", dummy:['虐待', '枝,支店,部門,分野', 'ため息をつく', 'しなくなる', '似ている', '減少する', 'を必要とする', '郊外', '衝動', 'に続く,に従う', '傑作', '花', '単調な', '会社,堅い', '欠点', '手続き', '間接', '小道,足跡', 'を促進する,育てる', 'に依存する', 'を磨く', '興味深い', 'を驚嘆させる', '変える', 'ほめ言葉', 'に加えて', 'を推測する', '宝石', '部族', 'を提案する', '練習,習慣', 'すばらしい', '先住', '神', 'ぼろ', '圧倒的な', '無作為な', '価値', '乗客', '栄光', '支払う', '直接,指し示す', '流行', '厳しい', '浸す,吸収する', 'を反映する,を反射する', 'からの', '大臣', '変わる,様々である', '元気,罰金,細かい', 'うまく対処する', '独占', '棒,極', '同僚,じっと見る', 'を放送する', '最初の', '引き合いに出す', '特徴', '有罪の', '顕著な', 'を振る', 'を禁じる', '孤児', '近い,親しい', '伝記', '代表して', '預言者', '目新しさ', '口論', '湾', 'ゆるい', '自由主義の', '炎', 'にあいさつする', 'すらりとした', '典型的な', '庭', '怠惰な', '工芸,技術', '１年の', '達成する', '野蛮な', '石油', 'を選ぶ', '認知症', 'ウイルス', '美徳', 'を非難する', '間隔', '腫瘍', '仲間の', 'ひどい', '必死の', '販売', 'すえつける,乗る', '市長', '抗議', '合成の', '気質', '出現,到来']},
 // ADD WORDS
 ];
-
-let quizList=[], currentIndex=0, correctCount=0, incorrectCount=0, globalTime=0, startTime=0, animationFrameId=null, canSelect=true, totalQuestions=0;
-
-const startBtn=document.getElementById('startBtn');
-const rangeStart=document.getElementById('rangeStart');
-const rangeEnd=document.getElementById('rangeEnd');
-const timeInput=document.getElementById('timeInput');
-const choiceCountSelect=document.getElementById('choiceCountSelect');
-const quizArea=document.getElementById('quizArea');
-const englishWordDiv=document.getElementById('englishWord');
-const choicesDiv=document.getElementById('choices');
-const summaryDiv=document.getElementById('summary');
-const globalTimerDiv=document.getElementById('globalTimer');
-const controls=document.getElementById('controls');
-
-function playSound(audioElem) {
-  const s = audioElem.cloneNode();
-  s.playbackRate = audioElem.playbackRate;
-  s.volume = audioElem.volume;
-  s.play().catch(e => console.log("play error:", e));
-}
-
-rangeStart.addEventListener('input',updateTimeByRange);
-rangeEnd.addEventListener('input',updateTimeByRange);
-function updateTimeByRange(){
-  const start=parseInt(rangeStart.value)||1;
-  const end=parseInt(rangeEnd.value)||wordPairs.length;
-  if(start<1||end<start) return;
-  const count=end-start+1;
-  timeInput.value=Math.ceil(count*2);
-}
-
-startBtn.addEventListener('click',()=>{
-  const start=parseInt(rangeStart.value)||1;
-  const end=parseInt(rangeEnd.value)||wordPairs.length;
-  if(start<1||end>wordPairs.length||start>end){ alert("範囲指定が不正です"); return; }
-  quizList=wordPairs.slice(start-1,end);
-  quizList.sort(()=>Math.random()-0.5);
-  totalQuestions=quizList.length;
-  correctCount=0; incorrectCount=0; currentIndex=0; canSelect=true;
-
-  quizArea.classList.remove('hidden'); summaryDiv.classList.add('hidden');
-  Array.from(controls.querySelectorAll("input,select,button")).forEach(el=>el.disabled=true);
-
-  globalTime=parseFloat(timeInput.value);
-  startTime=performance.now();
-  requestAnimationFrame(updateTimer);
-  showQuestion();
-  
-  const correctSound = document.getElementById("correctSound");
-  const wrongSound = document.getElementById("wrongSound");
-
-  correctSound.playbackRate = 1.8;
-  wrongSound.playbackRate = 1.5;
-});
-
-function updateTimer(timestamp){
-  const elapsed=(timestamp-startTime)/1000;
-  const remain=Math.max(globalTime-elapsed,0);
-  globalTimerDiv.textContent=`正解数: ${correctCount}/${totalQuestions}問       時間: ${remain.toFixed(2)}`;
-  if(remain<=0){ showSummary(false,true); }
-  else{ animationFrameId=requestAnimationFrame(updateTimer); }
-}
-
-function showQuestion(){
-  if(currentIndex>=quizList.length){ return showSummary(true,false); }
-  canSelect=true;
-  const item=quizList[currentIndex];
-  englishWordDiv.textContent=item.english;
-  globalTimerDiv.textContent=`正解数: ${correctCount}/${totalQuestions}問       時間: ${getRemainingTime().toFixed(2)}`;
-
-  let choices=[item.japanese];
-  const totalChoices=parseInt(choiceCountSelect.value);
-  let dummies=[...item.dummy]; dummies.sort(()=>Math.random()-0.5);
-  while(choices.length<totalChoices && dummies.length>0){ choices.push(dummies.pop()); }
-  choices.sort(()=>Math.random()-0.5);
-
-  choicesDiv.innerHTML="";
-  choices.forEach(ch=>{
-    const btn=document.createElement('button');
-    btn.className="choiceBtn";
-    btn.textContent=ch;
-    btn.addEventListener('mousedown',()=>selectChoice(btn,ch,item.japanese));
-    btn.addEventListener('touchstart',(e)=>{e.preventDefault(); selectChoice(btn,ch,item.japanese);},{passive:false});
-    choicesDiv.appendChild(btn);
-  });
-}
-
-function getRemainingTime(){ return Math.max(globalTime-(performance.now()-startTime)/1000,0); }
-
-function selectChoice(btn, selected, correct){
-  if(!canSelect) return;
-  canSelect = false;
-
-  const buttons = document.querySelectorAll(".choiceBtn");
-  buttons.forEach(b => b.disabled = true);
-
-  const correctSound = document.getElementById("correctSound");
-  const wrongSound = document.getElementById("wrongSound");
-
-  if(selected === correct){
-    btn.classList.add("correct");
-    correctCount++;
-    playSound(correctSound);
-
-    setTimeout(() => { 
-      currentIndex++; 
-      showQuestion(); 
-    }, 500);
-
-  } else {
-    buttons.forEach(b => { 
-      if(b.textContent === correct) b.classList.add("wrong"); 
-    });
-    quizList.push(quizList[currentIndex]);
-    incorrectCount++;
-    playSound(wrongSound);
-
-    setTimeout(() => { 
-      currentIndex++; 
-      showQuestion(); 
-    }, 800);
-  }
-}
-
-function showSummary(cleared=false,timeOut=false){
-  if(animationFrameId) cancelAnimationFrame(animationFrameId);
-  quizArea.classList.add('hidden'); summaryDiv.classList.remove('hidden');
-  Array.from(controls.querySelectorAll("input,select,button")).forEach(el=>el.disabled=false);
-
-  let remainingQuestions = totalQuestions - correctCount; 
-
-  let cardHTML='';
-  if(timeOut){
-    cardHTML=`<div class="summary-card">
-      <h2>GameOver !</h2>
-      <div class="result-row"><span class="result-label">正解数</span><span class="result-value">${correctCount}/${totalQuestions}問</span></div>
-      <div class="result-row"><span class="result-label">miss</span><span class="result-value">${incorrectCount}回</span></div>
-      <div class="result-row"><span class="result-label">あと</span><span class="result-value">${remainingQuestions}問</span></div>
-    </div>`;
-  }else{
-    const elapsedTime=((performance.now()-startTime)/1000).toFixed(2);
-    cardHTML=`<div class="summary-card">
-      <h2>CLEAR!</h2>
-      <div class="result-row"><span class="result-label">正解数</span><span class="result-value">${correctCount}/${totalQuestions}問</span></div>
-      <div class="result-row"><span class="result-label">miss</span><span class="result-value">${incorrectCount}回</span></div>
-      <div class="result-row"><span class="result-label">time</span><span class="result-value">${elapsedTime}秒</span></div>
-    </div>`;
-  }
-  summaryDiv.innerHTML=cardHTML;
-}
 </script>
 </body>
 </html>
