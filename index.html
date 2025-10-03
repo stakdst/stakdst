@@ -107,11 +107,20 @@ h1 { margin-top:0; text-align:center; }
   .controls { flex-direction:column; align-items:center; }
   #startBtn { width:100%; text-align:center; }
 }
+
+h1 a {
+  color: #111;              /* 黒字 */
+  text-decoration: none;    /* 下線なし */
+}
+h1 a.disabled {
+  pointer-events: none;     /* クリック無効化 */
+  color: #111;              /* 見た目は変えない */
+}
 </style>
 </head>
 <body>
 <div class="container">
-  <h1>英単語テスト</h1>
+  <h1><a id="quizLink" href="https://stakdst.github.io/TEST/高校_CHECK.pdf">英単語クイズ</a></h1>
   <div class="controls" id="controls">
     <label>範囲: <input id="rangeStart" type="number" min="1" value="1" style="width:70px"> 〜 
       <input id="rangeEnd" type="number" min="1" value="100" style="width:70px"></label>
@@ -186,6 +195,8 @@ startBtn.addEventListener('click',()=>{
 
   quizArea.classList.remove('hidden'); summaryDiv.classList.add('hidden');
   Array.from(controls.querySelectorAll("input,select,button")).forEach(el=>el.disabled=true);
+
+  document.getElementById("quizLink").classList.add("disabled");
 
   globalTime=parseFloat(timeInput.value);
   startTime=performance.now();
