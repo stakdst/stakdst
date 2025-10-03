@@ -304,6 +304,9 @@ function showSummary(cleared=false,timeOut=false){
     </div>`;
   }
   summaryDiv.innerHTML=cardHTML;
+  
+  // ★ ゲーム終了したらリンクを再び有効化
+  document.getElementById("quizLink").classList.remove("disabled");
 }
 
 const wordPairs = [
