@@ -364,8 +364,8 @@ function showSummary(cleared=false,timeOut=false){
 
     if(missList.length > 0){
       cardHTML += `<div style="text-align:left;">
-        <h3>Miss一覧</h3>
-        <ul style="list-style:none; padding-left:0;">` +
+        <h3 style="margin-top:20px;">Miss一覧</h3>
+        <ul style="list-style:none; padding-left:0; margin-top:0px;">` +
         missList.map(m=>`<li>${m.english}　${m.japanese}</li>`).join('') +
         `</ul>
       </div>`;
@@ -377,13 +377,13 @@ function showSummary(cleared=false,timeOut=false){
       <h2>CLEAR!</h2>
       <div class="result-row"><span class="result-label">正解数</span><span class="result-value">${correctCount}問</span></div>
       <div class="result-row"><span class="result-label">Time</span><span class="result-value">${elapsedTime}秒</span></div>
-      <div class="result-row"><span class="result-label">Miss</span><span class="result-value">${incorrectCount}問</span></div>
+      <div class="result-row"><span class="result-label">Miss</span><span class="result-value">${incorrectCount}回</span></div>
     </div>`;
 
     if(missList.length>0){
       cardHTML += `<div style="text-align:left;">
-        <h3>Miss一覧</h3>
-        <ul style="list-style:none; padding-left:0;">` +
+        <h3 style="margin-top:20px;">Miss一覧</h3>
+        <ul style="list-style:none; padding-left:0; margin-top:0px;">` +
         missList.map(m=>`<li>${m.english}　${m.japanese}</li>`).join('') +
         `</ul>
       </div>`;
