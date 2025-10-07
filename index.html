@@ -210,8 +210,16 @@ function clampRange() {
   rangeEnd.value = end;
 }
 
-rangeStart.addEventListener('input',()=>{ clampRange(); updateTimeByRange(); });
-rangeEnd.addEventListener('input',()=>{ clampRange(); updateTimeByRange(); });
+rangeStart.addEventListener('input',()=>{
+  if (rangeStart.value === "" || rangeEnd.value === "") return;
+  updateTimeByRange();
+});
+rangeEnd.addEventListener('input',()=>{
+  if (rangeStart.value === "" || rangeEnd.value === "") return;
+  updateTimeByRange();
+});
+rangeStart.addEventListener('change',()=>{ clampRange(); updateTimeByRange(); });
+rangeEnd.addEventListener('change',()=>{ clampRange(); updateTimeByRange(); });
 
 minus100.addEventListener('click',()=>{
   rangeStart.value = parseInt(rangeStart.value)-100;
