@@ -10,7 +10,7 @@ body {
   padding: 20px; 
   background: #f5f5f5; 
   color:#111; 
-  touch-action: manipulation; /* iPhoneダブルタップズーム防止 */
+  touch-action: manipulation;
 }
 .container { 
   max-width: 900px; 
@@ -357,6 +357,7 @@ minus100.addEventListener('click',()=>{
   updateTimeByRange();
   saveSettings();
 });
+
 plus100.addEventListener('click',()=>{
   rangeStart.value = parseInt(rangeStart.value)+100;
   rangeEnd.value = parseInt(rangeEnd.value)+100;
@@ -388,6 +389,7 @@ function showQuestion(){
   canSelect=true;
   const item=quizList[currentIndex];
   englishWordDiv.innerHTML=`<ruby>${item.english}<rt>${item.ruby}</rt></ruby>`;
+  playWordAudio(item.index);
   globalTimerDiv.textContent=`正解数: ${correctCount}/${totalQuestions}問       時間: ${getRemainingTime().toFixed(2)}`;
 
   let choices=[item.japanese];
@@ -506,6 +508,7 @@ startBtn.addEventListener('click', async ()=>{
   // ユーザー操作で AudioContext を作る（iOS 対策）
   try {
     await initAudioAssets();
+    await initWordAudio();
     if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
   } catch(e){ /* 初期化失敗でも先に進む */ }
 
@@ -514,7 +517,6 @@ startBtn.addEventListener('click', async ()=>{
   if(start<1||end>wordPairs.length||start>end){ alert("範囲指定が不正です"); return; }
   quizList=wordPairs.slice(start-1,end);
 
-  // ここを sort -> shuffle に変更
   shuffleArray(quizList);
 
   totalQuestions=quizList.length;
@@ -541,6 +543,40 @@ startBtn.addEventListener('click', async ()=>{
 document.addEventListener('DOMContentLoaded', () => {
   loadSettings();
 });
+
+/* ------------------ 英単語 mp3 再生（安定版・Safari対応） ------------------ */
+let wordAudio = null;
+
+function initWordAudio() {
+  if (wordAudio) return;
+  wordAudio = new Audio('words.mp3');
+  wordAudio.preload = 'auto';
+  wordAudio.crossOrigin = "anonymous";
+  wordAudio.volume = 1.0;
+}
+
+function playWordAudio(index) {
+  if (!wordAudio) return;
+
+  const start = index * 3 +0.2;
+  const end   = start + 3 +0.2;
+  const duration = end - start;
+
+  try {
+    wordAudio.pause();
+    wordAudio.currentTime = start;
+    wordAudio.play().catch(()=>{});
+
+    clearTimeout(wordAudio._stopTimer);
+    wordAudio._stopTimer = setTimeout(() => {
+      try {
+        wordAudio.pause();
+      } catch(e){}
+    }, duration * 1000);
+  } catch (e) {
+    console.warn('wordAudio 再生エラー:', e);
+  }
+}
 
 /* ------------------ 重要: wordPairs データ ------------------ */
 const wordPairs = [
@@ -2646,6 +2682,7 @@ const wordPairs = [
   {english:"due", ruby:"デ'ュー", japanese:"〜のせいで,～予定の,当然の", dummy:['溶解する', '量', '復讐', 'もがく', '講義', 'がたがた鳴らす', 'を取り囲む', '医者', '憎しみ', '体重', '記憶', 'こする', 'ぶらつく', 'を祝う', 'ちらり', 'を登録する', '祖先', 'さわやかな', '性別', 'うまく対処する', '通勤する', '灌漑', '与える', '物', '巣', '非難する', 'を理解する', '悲しみ', '軽蔑', '生理的な', '凍りつく', '人口', '気質', 'に取って代わる', '分類する', '利己的な', '双子', '瀬戸際', '憲法', 'に侵入する', '利用する', '主観的な', '先駆者', '愛国的な', 'を断る', '孤独な', '主要な', '政治的な', '賛成する', '貨物', '状況', '共感', '預言者', 'をうらやむ', '暇', '明らかな', 'を規制する', '顕著な', 'を得る', '固執する', 'を強調する', '熱帯', '独創的な', '離婚', '忠実な', 'を雇う', '企業', '自主性', 'を購入する', 'さび', '曲', '明白な', 'かすかな', '赤道', 'まゆをひそめる', '突っ込む', '不足', '固く守る', '複雑な', '器具', '散文', '吸う', '嘆願する', '願望', '崩壊する', '軌道', '発音する', '条約', '先', '運動選手', '期間', '勇敢な', 'しばしば', '環境保護', 'ガン', 'メールを送る', '評判', '飲み物', 'まっただ中', 'を引きつける']},
 // ADD WORDS
 ];
+wordPairs.forEach((w, i) => w.index = i);
 
 </script>
 </body>
