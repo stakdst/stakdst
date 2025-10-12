@@ -195,8 +195,7 @@ const globalTimerDiv=document.getElementById('globalTimer');
 const controls=document.getElementById('controls');
 const minus100=document.getElementById('minus100');
 const plus100=document.getElementById('plus100');
-
-const STORAGE_KEY = 'vocabQuizSettings_v1';
+const STORAGE_KEY = 'vocabQuizSettings_v1_' + (document.title || location.pathname);
 
 /* ------------------ 1) Fisher–Yates シャッフル ------------------ */
 function shuffleArray(arr) {
